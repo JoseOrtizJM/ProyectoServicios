@@ -1,7 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .documents import User
+from .documents import ROLE_CHOICES, User
 
 # MongoEngine no es un ORM de Django, así que no existe ModelSerializer
 # para sus Document. Estos serializers son planos: validan a mano y
@@ -102,3 +102,26 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class RefreshTokenSerializer(serializers.Serializer):
     refresh = serializers.CharField()
+
+
+class AdminUserSerializer(serializers.Serializer):
+    """A diferencia de UserProfileSerializer (el usuario editando su propio
+    nombre), este serializer lo usa el admin y sí puede tocar role/is_active.
+    El email queda de solo lectura: es el identificador de login, cambiarlo
+    tiene implicaciones aparte que no se piden en este sprint."""
+
+    id = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    first_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    role = serializers.ChoiceField(choices=ROLE_CHOICES, required=False)
+    is_active = serializers.BooleanField(required=False)
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+    def update(self, instance, validated_data):
+        for attr in ("first_name", "last_name", "role", "is_active"):
+            if attr in validated_data:
+                setattr(instance, attr, validated_data[attr])
+        instance.save()
+        return instance
