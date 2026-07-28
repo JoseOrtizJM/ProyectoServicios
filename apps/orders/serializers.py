@@ -20,6 +20,7 @@ def detect_card_brand(card_number):
 
 class SavedCardSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
+    cardholder_name = serializers.CharField(read_only=True)
     brand = serializers.CharField(read_only=True)
     last4 = serializers.CharField(read_only=True)
     exp_month = serializers.IntegerField(read_only=True)
@@ -32,11 +33,18 @@ class AddCardSerializer(serializers.Serializer):
     """Simulado: card_number y cvv se validan por formato pero JAMÁS se
     persisten — solo se guardan marca + últimos 4 dígitos."""
 
+    cardholder_name = serializers.CharField(max_length=100)
     card_number = serializers.CharField(write_only=True)
     cvv = serializers.CharField(write_only=True, required=False, allow_blank=True)
     exp_month = serializers.IntegerField(min_value=1, max_value=12)
     exp_year = serializers.IntegerField(min_value=2000)
     alias = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
+
+    def validate_cardholder_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Escribe el nombre completo del titular.")
+        return value
 
     def validate_card_number(self, value):
         digits = value.replace(" ", "")
@@ -67,17 +75,25 @@ class AddCardSerializer(serializers.Serializer):
 
 class CheckoutSerializer(serializers.Serializer):
     payment_method = serializers.ChoiceField(choices=PAYMENT_METHOD_CHOICES)
+    shipping_address = serializers.CharField(max_length=300)
 
     # Pago con tarjeta guardada:
     card_id = serializers.CharField(required=False, allow_blank=True)
 
     # Pago con tarjeta nueva (simulada — nunca se persiste el número/cvv):
+    cardholder_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     card_number = serializers.CharField(required=False, allow_blank=True, write_only=True)
     cvv = serializers.CharField(required=False, allow_blank=True, write_only=True)
     exp_month = serializers.IntegerField(required=False, min_value=1, max_value=12)
     exp_year = serializers.IntegerField(required=False, min_value=2000)
     save_card = serializers.BooleanField(required=False, default=False)
     card_alias = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
+
+    def validate_shipping_address(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Indica la dirección donde se debe entregar el pedido.")
+        return value
 
     def validate(self, attrs):
         if attrs["payment_method"] != PAYMENT_CARD:
@@ -100,6 +116,11 @@ class CheckoutSerializer(serializers.Serializer):
                 raise serializers.ValidationError({"card_id": "Esa tarjeta no existe o no te pertenece."})
             attrs["resolved_card"] = card
         else:
+            cardholder_name = (attrs.get("cardholder_name") or "").strip()
+            if not cardholder_name:
+                raise serializers.ValidationError({"cardholder_name": "Escribe el nombre completo del titular."})
+            attrs["cardholder_name"] = cardholder_name
+
             digits = card_number.replace(" ", "")
             if not digits.isdigit() or not (13 <= len(digits) <= 19):
                 raise serializers.ValidationError({"card_number": "Número de tarjeta inválido."})
@@ -136,6 +157,7 @@ class OrderSerializer(serializers.Serializer):
     user = serializers.SerializerMethodField(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    shipping_address = serializers.CharField(read_only=True)
     payment_method = serializers.CharField(read_only=True)
     card = serializers.SerializerMethodField(read_only=True)
     status = serializers.CharField(read_only=True)
@@ -150,5 +172,9 @@ class OrderSerializer(serializers.Serializer):
 
     def get_card(self, obj):
         if obj.card_snapshot:
-            return {"brand": obj.card_snapshot.brand, "last4": obj.card_snapshot.last4}
+            return {
+                "brand": obj.card_snapshot.brand,
+                "last4": obj.card_snapshot.last4,
+                "cardholder_name": obj.card_snapshot.cardholder_name,
+            }
         return None

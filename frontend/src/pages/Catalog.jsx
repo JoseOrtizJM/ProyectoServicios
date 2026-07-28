@@ -4,6 +4,7 @@ import { listBrands, listCategories, listProducts } from "../api/catalog";
 import Pagination from "../components/catalog/Pagination";
 import ProductCard from "../components/catalog/ProductCard";
 import ProductFilters from "../components/catalog/ProductFilters";
+import WelcomeBanner from "../components/catalog/WelcomeBanner";
 
 const INITIAL_FILTERS = { search: "", category: "", brand: "", min_price: "", max_price: "" };
 
@@ -61,36 +62,40 @@ export default function Catalog() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_1fr]">
-      <ProductFilters
-        categories={categories}
-        brands={brands}
-        filters={filters}
-        onChange={handleFilterChange}
-        onReset={handleReset}
-      />
+    <div className="flex flex-col gap-6">
+      <WelcomeBanner />
 
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-foreground">Catálogo</h1>
-          {!loading && <span className="text-sm text-muted">{meta.count} productos</span>}
-        </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_1fr]">
+        <ProductFilters
+          categories={categories}
+          brands={brands}
+          filters={filters}
+          onChange={handleFilterChange}
+          onReset={handleReset}
+        />
 
-        {error && <p className="text-sm text-danger">{error}</p>}
-
-        {loading ? (
-          <p className="py-16 text-center text-muted">Cargando productos…</p>
-        ) : products.length === 0 ? (
-          <p className="py-16 text-center text-muted">No se encontraron productos con esos filtros.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">Catálogo</h2>
+            {!loading && <span className="text-sm text-muted">{meta.count} productos</span>}
           </div>
-        )}
 
-        <Pagination page={page} totalPages={meta.total_pages} onPageChange={setPage} />
+          {error && <p className="text-sm text-danger">{error}</p>}
+
+          {loading ? (
+            <p className="py-16 text-center text-muted">Cargando productos…</p>
+          ) : products.length === 0 ? (
+            <p className="py-16 text-center text-muted">No se encontraron productos con esos filtros.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+
+          <Pagination page={page} totalPages={meta.total_pages} onPageChange={setPage} />
+        </div>
       </div>
     </div>
   );

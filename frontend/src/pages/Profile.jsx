@@ -5,6 +5,7 @@ import { extractErrorMessages } from "../api/errors";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import PasswordInput from "../components/ui/PasswordInput";
 import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
@@ -101,27 +102,24 @@ export default function Profile() {
           ))}
           {passwordSuccess && <Alert variant="success">{passwordSuccess}</Alert>}
 
-          <Input
+          <PasswordInput
             label="Contraseña actual"
-            type="password"
             name="old_password"
             autoComplete="current-password"
             value={passwordForm.old_password}
             onChange={(event) => setPasswordForm((prev) => ({ ...prev, old_password: event.target.value }))}
             required
           />
-          <Input
+          <PasswordInput
             label="Nueva contraseña"
-            type="password"
             name="new_password"
             autoComplete="new-password"
             value={passwordForm.new_password}
             onChange={(event) => setPasswordForm((prev) => ({ ...prev, new_password: event.target.value }))}
             required
           />
-          <Input
+          <PasswordInput
             label="Confirmar nueva contraseña"
-            type="password"
             name="new_password_confirm"
             autoComplete="new-password"
             value={passwordForm.new_password_confirm}

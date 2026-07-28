@@ -129,14 +129,19 @@ def checkout(request):
     if data["payment_method"] == PAYMENT_CARD:
         resolved_card = data.get("resolved_card")
         if resolved_card:
-            card_snapshot = CardSnapshot(brand=resolved_card.brand, last4=resolved_card.last4)
+            card_snapshot = CardSnapshot(
+                brand=resolved_card.brand,
+                last4=resolved_card.last4,
+                cardholder_name=resolved_card.cardholder_name,
+            )
         else:
             brand = detect_card_brand(data["card_number"])
             last4 = data["card_number"][-4:]
-            card_snapshot = CardSnapshot(brand=brand, last4=last4)
+            card_snapshot = CardSnapshot(brand=brand, last4=last4, cardholder_name=data["cardholder_name"])
             if data.get("save_card"):
                 SavedCard(
                     user=request.user,
+                    cardholder_name=data["cardholder_name"],
                     brand=brand,
                     last4=last4,
                     exp_month=data["exp_month"],
@@ -152,6 +157,7 @@ def checkout(request):
         user=request.user,
         items=order_items,
         total=total,
+        shipping_address=data["shipping_address"],
         payment_method=data["payment_method"],
         card_snapshot=card_snapshot,
         status=order_status,

@@ -40,6 +40,7 @@ class SavedCard(me.Document):
     solo lo necesario para mostrarla en la UI (marca + últimos 4 dígitos)."""
 
     user = me.ReferenceField(User, required=True, reverse_delete_rule=me.CASCADE)
+    cardholder_name = me.StringField(max_length=100, default="")
     brand = me.StringField(max_length=20, required=True)
     last4 = me.StringField(max_length=4, required=True)
     exp_month = me.IntField(min_value=1, max_value=12, required=True)
@@ -61,6 +62,7 @@ class CardSnapshot(me.EmbeddedDocument):
 
     brand = me.StringField(max_length=20)
     last4 = me.StringField(max_length=4)
+    cardholder_name = me.StringField(max_length=100, default="")
 
 
 class OrderItem(me.EmbeddedDocument):
@@ -77,6 +79,10 @@ class Order(me.Document):
     user = me.ReferenceField(User, required=True, reverse_delete_rule=me.DENY)
     items = me.EmbeddedDocumentListField(OrderItem, required=True)
     total = me.DecimalField(required=True, min_value=0, precision=2)  # MXN
+    # No required=True a nivel de documento para no romper pedidos ya
+    # existentes (creados antes de este campo) al guardarlos de nuevo — lo
+    # obligatorio se valida en CheckoutSerializer para pedidos nuevos.
+    shipping_address = me.StringField(max_length=300, default="")
 
     payment_method = me.StringField(choices=PAYMENT_METHOD_CHOICES, required=True)
     card_snapshot = me.EmbeddedDocumentField(CardSnapshot, required=False)

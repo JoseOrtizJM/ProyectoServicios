@@ -68,6 +68,7 @@ export default function Orders() {
               <tr>
                 <th className="px-4 py-3">Pedido</th>
                 <th className="px-4 py-3">Cliente</th>
+                <th className="px-4 py-3">Dirección</th>
                 <th className="px-4 py-3">Fecha</th>
                 <th className="px-4 py-3">Pago</th>
                 <th className="px-4 py-3">Total</th>
@@ -79,6 +80,9 @@ export default function Orders() {
                 <tr key={order.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3 text-muted">#{order.id.slice(-6)}</td>
                   <td className="px-4 py-3 text-foreground">{order.user?.name || order.user?.email}</td>
+                  <td className="max-w-48 truncate px-4 py-3 text-muted" title={order.shipping_address}>
+                    {order.shipping_address || "—"}
+                  </td>
                   <td className="px-4 py-3 text-muted">{formatDate(order.created_at)}</td>
                   <td className="px-4 py-3 text-muted">{order.payment_method === "card" ? "Tarjeta" : "Efectivo"}</td>
                   <td className="px-4 py-3 text-foreground">{formatCurrency(order.total)}</td>

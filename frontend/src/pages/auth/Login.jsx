@@ -5,6 +5,7 @@ import { extractErrorMessages } from "../../api/errors";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import PasswordInput from "../../components/ui/PasswordInput";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
@@ -17,7 +18,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to={location.state?.from?.pathname || (isAdmin ? "/admin" : "/")} replace />;
+    return <Navigate to={location.state?.from?.pathname || (isAdmin ? "/admin" : "/catalogo")} replace />;
   }
 
   async function handleSubmit(event) {
@@ -26,7 +27,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       const loggedInUser = await login(form.email, form.password);
-      const fallback = loggedInUser.role === "admin" ? "/admin" : "/";
+      const fallback = loggedInUser.role === "admin" ? "/admin" : "/catalogo";
       navigate(location.state?.from?.pathname || fallback, { replace: true });
     } catch (error) {
       setErrors(extractErrorMessages(error));
@@ -56,9 +57,8 @@ export default function Login() {
           onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
           required
         />
-        <Input
+        <PasswordInput
           label="Contraseña"
-          type="password"
           name="password"
           autoComplete="current-password"
           value={form.password}

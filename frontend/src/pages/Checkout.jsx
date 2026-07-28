@@ -11,11 +11,20 @@ import { ORDER_STATUS_LABELS } from "../constants/orderStatus";
 import { useCart } from "../context/CartContext";
 import { formatCurrency } from "../utils/format";
 
-const EMPTY_CARD_FORM = { card_number: "", cvv: "", exp_month: "", exp_year: "", card_alias: "", save_card: false };
+const EMPTY_CARD_FORM = {
+  cardholder_name: "",
+  card_number: "",
+  cvv: "",
+  exp_month: "",
+  exp_year: "",
+  card_alias: "",
+  save_card: false,
+};
 
 export default function Checkout() {
   const { cart, loading: cartLoading, refreshCart } = useCart();
 
+  const [shippingAddress, setShippingAddress] = useState("");
   const [cards, setCards] = useState([]);
   const [loadingCards, setLoadingCards] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -45,16 +54,22 @@ export default function Checkout() {
     }
   }
 
+  function handleCardNumberChange(event) {
+    const digitsOnly = event.target.value.replace(/\D/g, "").slice(0, 16);
+    setCardForm((prev) => ({ ...prev, card_number: digitsOnly }));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErrors([]);
     setSubmitting(true);
 
-    const payload = { payment_method: paymentMethod };
+    const payload = { payment_method: paymentMethod, shipping_address: shippingAddress };
     if (paymentMethod === "card") {
       if (selectedCardId) {
         payload.card_id = selectedCardId;
       } else {
+        payload.cardholder_name = cardForm.cardholder_name;
         payload.card_number = cardForm.card_number;
         payload.cvv = cardForm.cvv;
         payload.exp_month = Number(cardForm.exp_month);
@@ -84,6 +99,7 @@ export default function Checkout() {
           <span className="font-medium text-foreground">{ORDER_STATUS_LABELS[order.status] || order.status}</span>.
         </p>
         <p className="text-2xl font-semibold text-foreground">{formatCurrency(order.total)}</p>
+        <p className="text-sm text-muted">Se enviará a: {order.shipping_address}</p>
         <Link to="/catalogo">
           <Button variant="outline" type="button">
             Seguir comprando
@@ -116,6 +132,22 @@ export default function Checkout() {
         {errors.map((message, index) => (
           <Alert key={`${index}-${message}`}>{message}</Alert>
         ))}
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="shipping_address" className="text-sm font-medium text-foreground">
+            Dirección de envío
+          </label>
+          <textarea
+            id="shipping_address"
+            name="shipping_address"
+            rows={2}
+            placeholder="Calle, número, colonia, ciudad, estado, código postal…"
+            value={shippingAddress}
+            onChange={(event) => setShippingAddress(event.target.value)}
+            required
+            className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+          />
+        </div>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-foreground">Método de pago</span>
@@ -165,6 +197,7 @@ export default function Checkout() {
                       />
                       <CreditCard size={16} />
                       {card.brand} •••• {card.last4} ({card.exp_month}/{card.exp_year})
+                      {card.cardholder_name && <span className="text-muted">· {card.cardholder_name}</span>}
                       {card.alias && <span className="text-muted">· {card.alias}</span>}
                     </span>
                     <button
@@ -192,14 +225,23 @@ export default function Checkout() {
             {selectedCardId === "" && (
               <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
                 <p className="text-xs text-muted">
-                  Tarjeta simulada: puedes usar cualquier número de 13 a 19 dígitos, no se guarda información real.
+                  Tarjeta simulada: puedes usar cualquier número de hasta 16 dígitos, no se guarda información real.
                 </p>
+                <Input
+                  label="Nombre del titular"
+                  name="cardholder_name"
+                  autoComplete="cc-name"
+                  value={cardForm.cardholder_name}
+                  onChange={(event) => setCardForm((prev) => ({ ...prev, cardholder_name: event.target.value }))}
+                  required
+                />
                 <Input
                   label="Número de tarjeta"
                   name="card_number"
                   inputMode="numeric"
+                  maxLength={16}
                   value={cardForm.card_number}
-                  onChange={(event) => setCardForm((prev) => ({ ...prev, card_number: event.target.value }))}
+                  onChange={handleCardNumberChange}
                   required
                 />
                 <div className="grid grid-cols-3 gap-3">

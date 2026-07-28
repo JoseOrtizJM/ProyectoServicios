@@ -12,7 +12,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-        <Link to={isAdmin ? "/admin" : "/"} className="flex items-center gap-2 font-semibold text-foreground">
+        <Link to={isAdmin ? "/admin" : "/catalogo"} className="flex items-center gap-2 font-semibold text-foreground">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <ShoppingBag size={18} />
           </span>

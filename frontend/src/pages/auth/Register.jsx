@@ -5,6 +5,7 @@ import { extractErrorMessages } from "../../api/errors";
 import Alert from "../../components/ui/Alert";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+import PasswordInput from "../../components/ui/PasswordInput";
 import { useAuth } from "../../context/AuthContext";
 
 const INITIAL_FORM = {
@@ -24,7 +25,7 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/catalogo" replace />;
   }
 
   function handleChange(field) {
@@ -37,7 +38,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register(form);
-      navigate("/", { replace: true });
+      navigate("/catalogo", { replace: true });
     } catch (error) {
       setErrors(extractErrorMessages(error));
     } finally {
@@ -71,18 +72,16 @@ export default function Register() {
           onChange={handleChange("email")}
           required
         />
-        <Input
+        <PasswordInput
           label="Contraseña"
-          type="password"
           name="password"
           autoComplete="new-password"
           value={form.password}
           onChange={handleChange("password")}
           required
         />
-        <Input
+        <PasswordInput
           label="Confirmar contraseña"
-          type="password"
           name="password_confirm"
           autoComplete="new-password"
           value={form.password_confirm}

@@ -112,7 +112,11 @@ export default function Orders() {
               })}
             </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+            {order.shipping_address && (
+              <p className="mt-3 text-xs text-muted">Enviado a: {order.shipping_address}</p>
+            )}
+
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm text-muted">
                 {order.payment_method === "card" && order.card
                   ? `Tarjeta ${order.card.brand} •••• ${order.card.last4}`
