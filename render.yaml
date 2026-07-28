@@ -1,12 +1,20 @@
 # Blueprint de Render (Infrastructure as Code).
 # Al conectar el repo en render.com, Render detecta este archivo y
-# preconfigura el servicio. Las variables marcadas "sync: false" son
-# secretos que se cargan manualmente desde el dashboard de Render, nunca
-# desde este archivo.
+# preconfigura ambos servicios (API + frontend web). Las variables marcadas
+# "sync: false" son secretos que se cargan manualmente desde el dashboard
+# de Render, nunca desde este archivo.
 #
 # IMPORTANTE: Render no ofrece MongoDB como base de datos administrada.
 # Para producción se necesita un cluster de MongoDB Atlas (free tier
 # sirve para empezar) y pasar su connection string en MONGO_URI.
+#
+# Orden recomendado al desplegar por primera vez:
+#   1. Crear el Blueprint (despliega ambos servicios a la vez).
+#   2. Cargar los secretos "sync: false" del backend en el dashboard.
+#   3. Una vez arriba el backend, confirmar su URL real y ajustar
+#      VITE_API_URL abajo si difiere de la que se asume aquí.
+#   4. Ajustar CORS_ALLOWED_ORIGINS del backend con la URL real del
+#      frontend (Render la genera al crear el servicio de tipo static).
 
 services:
   - type: web
@@ -27,10 +35,29 @@ services:
       - key: MONGO_URI
         sync: false # connection string de MongoDB Atlas
       - key: CORS_ALLOWED_ORIGINS
-        sync: false # dominios del frontend web/móvil en producción
+        sync: false # URL del frontend en Render, ej. https://proyecto-servicios-web.onrender.com
       - key: JWT_ACCESS_TOKEN_MINUTES
         value: "30"
       - key: JWT_REFRESH_TOKEN_DAYS
         value: "7"
       - key: ANTHROPIC_API_KEY
         sync: false
+
+  - type: web
+    name: proyecto-servicios-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: dist
+    envVars:
+      # Asume que el backend no cambió de nombre de servicio. Si le pusiste
+      # otro nombre o un dominio propio, actualiza esta URL antes de
+      # desplegar (es build-time: hay que reconstruir si cambia).
+      - key: VITE_API_URL
+        value: "https://proyecto-servicios-api.onrender.com/api"
+    routes:
+      # Sin esto, recargar la página en una ruta como /catalogo da 404 —
+      # es un SPA con rutas del lado del cliente (React Router).
+      - type: rewrite
+        source: /*
+        destination: /index.html

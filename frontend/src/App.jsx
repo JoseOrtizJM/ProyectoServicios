@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Layout from "./components/layout/Layout";
@@ -5,15 +6,6 @@ import ProtectedRoute from "./components/routing/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminAnalytics from "./pages/admin/Analytics";
-import AdminBrands from "./pages/admin/Brands";
-import AdminCategories from "./pages/admin/Categories";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminOrders from "./pages/admin/Orders";
-import AdminProducts from "./pages/admin/Products";
-import AdminReviews from "./pages/admin/Reviews";
-import AdminUsers from "./pages/admin/Users";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Cart from "./pages/Cart";
@@ -24,6 +16,23 @@ import NotFound from "./pages/NotFound";
 import Orders from "./pages/Orders";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
+
+// El panel de admin (y sobre todo recharts, que usa Analíticas) es pesado y
+// solo lo carga un administrador — separarlo del bundle principal evita que
+// invitados/usuarios normales lo descarguen sin necesitarlo nunca.
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminBrands = lazy(() => import("./pages/admin/Brands"));
+const AdminCategories = lazy(() => import("./pages/admin/Categories"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminOrders = lazy(() => import("./pages/admin/Orders"));
+const AdminProducts = lazy(() => import("./pages/admin/Products"));
+const AdminReviews = lazy(() => import("./pages/admin/Reviews"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+
+function AdminFallback() {
+  return <p className="py-16 text-center text-muted">Cargando panel de administración…</p>;
+}
 
 function App() {
   return (
@@ -45,7 +54,14 @@ function App() {
                   <Route path="/pedidos" element={<Orders />} />
                 </Route>
                 <Route element={<ProtectedRoute adminOnly />}>
-                  <Route path="/admin" element={<AdminLayout />}>
+                  <Route
+                    path="/admin"
+                    element={
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminLayout />
+                      </Suspense>
+                    }
+                  >
                     <Route index element={<AdminDashboard />} />
                     <Route path="productos" element={<AdminProducts />} />
                     <Route path="categorias" element={<AdminCategories />} />

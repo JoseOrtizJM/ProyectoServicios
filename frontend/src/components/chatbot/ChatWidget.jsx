@@ -55,9 +55,9 @@ export default function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-30 flex flex-col items-end gap-3">
+    <div className="fixed bottom-4 right-4 z-30 flex flex-col items-end gap-3 sm:bottom-5 sm:right-5">
       {open && (
-        <div className="flex h-[28rem] w-80 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lg sm:w-96">
+        <div className="flex h-[28rem] w-[calc(100vw-2rem)] max-w-80 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lg sm:max-w-96">
           <div className="flex items-center justify-between border-b border-border bg-surface-muted px-4 py-3">
             <span className="text-sm font-semibold text-foreground">Asistente Tienda Tech</span>
             <button
