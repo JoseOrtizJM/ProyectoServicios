@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+dist/
+web-build/
+.env
+*.log
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Native builds locales (si algún día se hace prebuild/eject)
+ios/
+android/

@@ -1,0 +1,43 @@
+// Misma paleta pastel que frontend/src/index.css, traducida a valores planos
+// porque React Native no tiene variables CSS.
+export const lightColors = {
+  background: "#faf7fc",
+  surface: "#ffffff",
+  surfaceMuted: "#f2eefa",
+  border: "#e6e0f2",
+  foreground: "#3d3a4b",
+  muted: "#8b87a3",
+  primary: "#b8a9e8",
+  primaryForeground: "#352a5c",
+  secondary: "#a8d8dc",
+  secondaryForeground: "#1f4b4e",
+  accent: "#f3c6d3",
+  accentForeground: "#6b2e42",
+  success: "#b3ddc0",
+  successForeground: "#1e4a2c",
+  danger: "#f0b3b3",
+  dangerForeground: "#6b1f1f",
+  warning: "#f0dda0",
+  warningForeground: "#5c4a12",
+};
+
+export const darkColors = {
+  background: "#1e1b26",
+  surface: "#262230",
+  surfaceMuted: "#2e2a3a",
+  border: "#3b3649",
+  foreground: "#ede9f5",
+  muted: "#a79fc0",
+  primary: "#b8a9e8",
+  primaryForeground: "#241c3d",
+  secondary: "#8fc8cc",
+  secondaryForeground: "#0f2e30",
+  accent: "#e3afc1",
+  accentForeground: "#3d1826",
+  success: "#8fcba3",
+  successForeground: "#12291a",
+  danger: "#e39a9a",
+  dangerForeground: "#341010",
+  warning: "#e3c888",
+  warningForeground: "#302209",
+};
