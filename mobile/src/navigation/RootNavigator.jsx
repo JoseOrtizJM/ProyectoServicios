@@ -3,12 +3,13 @@ import { ActivityIndicator, View } from "react-native";
 
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import AdminNavigator from "./AdminNavigator";
 import AppNavigator from "./AppNavigator";
 import AuthNavigator from "./AuthNavigator";
 
 export default function RootNavigator() {
   const { theme, colors } = useTheme();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading } = useAuth();
   const baseNavigationTheme = theme === "dark" ? DarkTheme : DefaultTheme;
 
   const navigationTheme = {
@@ -33,7 +34,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
+      {!isAuthenticated ? <AuthNavigator /> : isAdmin ? <AdminNavigator /> : <AppNavigator />}
     </NavigationContainer>
   );
 }

@@ -6,12 +6,12 @@ import { useAuth } from "./AuthContext";
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const refreshCart = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isAdmin) {
       setCart(null);
       return;
     }
@@ -22,7 +22,7 @@ export function CartProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isAdmin]);
 
   useEffect(() => {
     refreshCart();
