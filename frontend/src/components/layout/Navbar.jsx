@@ -1,11 +1,13 @@
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 import ThemeToggle from "../ui/ThemeToggle";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { itemCount } = useCart();
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur">
@@ -29,6 +31,18 @@ export default function Navbar() {
               <span className="hidden text-sm text-muted sm:inline">
                 Hola, {user.first_name || user.email}
               </span>
+              <Link
+                to="/carrito"
+                className="relative flex h-9 w-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted"
+                aria-label="Ver carrito"
+              >
+                <ShoppingCart size={18} />
+                {itemCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-accent-foreground">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
               <Link
                 to="/profile"
                 className="rounded-full px-4 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-muted"

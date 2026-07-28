@@ -1,14 +1,22 @@
-import { ImageOff } from "lucide-react";
+import { ImageOff, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
+import { extractErrorMessages } from "../api/errors";
 import { getProduct } from "../api/catalog";
 import { listProductReviews } from "../api/reviews";
+import Alert from "../components/ui/Alert";
+import Button from "../components/ui/Button";
 import StarRating from "../components/ui/StarRating";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { formatCurrency, formatDate } from "../utils/format";
 
 export default function ProductDetail() {
   const { productId } = useParams();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { addItem } = useCart();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,6 +25,11 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [summary, setSummary] = useState({ average_rating: null, total_reviews: 0 });
   const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [addSuccess, setAddSuccess] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -39,6 +52,26 @@ export default function ProductDetail() {
       .catch(() => {})
       .finally(() => setReviewsLoading(false));
   }, [productId]);
+
+  useEffect(() => {
+    setQuantity(1);
+    setAddError("");
+    setAddSuccess(false);
+  }, [productId]);
+
+  async function handleAddToCart() {
+    setAddError("");
+    setAddSuccess(false);
+    setAddingToCart(true);
+    try {
+      await addItem(productId, quantity);
+      setAddSuccess(true);
+    } catch (error) {
+      setAddError(extractErrorMessages(error)[0]);
+    } finally {
+      setAddingToCart(false);
+    }
+  }
 
   if (loading) {
     return <p className="py-16 text-center text-muted">Cargando producto…</p>;
@@ -92,6 +125,48 @@ export default function ProductDetail() {
           <p className="whitespace-pre-line text-sm text-muted">
             {product.description || "Este producto no tiene descripción todavía."}
           </p>
+
+          {isAuthenticated ? (
+            product.stock > 0 && (
+              <div className="flex flex-col gap-3">
+                {addError && <Alert>{addError}</Alert>}
+                {addSuccess && <Alert variant="success">Se agregó al carrito.</Alert>}
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-surface-muted"
+                      aria-label="Disminuir cantidad"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="w-6 text-center text-foreground">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-surface-muted"
+                      aria-label="Aumentar cantidad"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+
+                  <Button type="button" onClick={handleAddToCart} disabled={addingToCart}>
+                    {addingToCart ? "Agregando…" : "Agregar al carrito"}
+                  </Button>
+                </div>
+              </div>
+            )
+          ) : (
+            <p className="text-sm text-muted">
+              <Link to="/login" state={{ from: location }} className="font-medium text-primary underline underline-offset-2">
+                Inicia sesión
+              </Link>{" "}
+              para comprar este producto.
+            </p>
+          )}
         </div>
       </div>
 
