@@ -1,11 +1,13 @@
 from decimal import Decimal, InvalidOperation
 
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from mongoengine.errors import OperationError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from apps.common.permissions import IsAdminOrReadOnly
+from apps.common.schema import PAGINATION_PARAMETERS, DetailSerializer, paginated_response
 from apps.common.utils import get_object_or_404, paginate_queryset, valid_object_id
 
 from .documents import Brand, Category, Product
@@ -14,6 +16,21 @@ from .serializers import BrandSerializer, CategorySerializer, ProductSerializer
 # --- Categorías ---
 
 
+@extend_schema(
+    tags=["Catálogo — Categorías"],
+    summary="Listar categorías (público)",
+    parameters=PAGINATION_PARAMETERS,
+    responses={200: paginated_response(CategorySerializer, "PaginatedCategoryList")},
+    methods=["GET"],
+    auth=[{}],
+)
+@extend_schema(
+    tags=["Catálogo — Categorías"],
+    summary="Crear categoría (admin)",
+    request=CategorySerializer,
+    responses={201: CategorySerializer},
+    methods=["POST"],
+)
 @api_view(["GET", "POST"])
 @permission_classes([IsAdminOrReadOnly])
 def category_list(request):
@@ -28,6 +45,27 @@ def category_list(request):
     return Response(CategorySerializer(category).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Catálogo — Categorías"],
+    summary="Ver categoría (público)",
+    responses={200: CategorySerializer},
+    methods=["GET"],
+    auth=[{}],
+)
+@extend_schema(
+    tags=["Catálogo — Categorías"],
+    summary="Editar categoría (admin)",
+    request=CategorySerializer,
+    responses={200: CategorySerializer},
+    methods=["PUT", "PATCH"],
+)
+@extend_schema(
+    tags=["Catálogo — Categorías"],
+    summary="Eliminar categoría (admin)",
+    description="Falla con 409 si hay productos asociados a la categoría.",
+    responses={204: None, 409: DetailSerializer},
+    methods=["DELETE"],
+)
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
 @permission_classes([IsAdminOrReadOnly])
 def category_detail(request, category_id):
@@ -61,6 +99,21 @@ def category_detail(request, category_id):
 # --- Marcas ---
 
 
+@extend_schema(
+    tags=["Catálogo — Marcas"],
+    summary="Listar marcas (público)",
+    parameters=PAGINATION_PARAMETERS,
+    responses={200: paginated_response(BrandSerializer, "PaginatedBrandList")},
+    methods=["GET"],
+    auth=[{}],
+)
+@extend_schema(
+    tags=["Catálogo — Marcas"],
+    summary="Crear marca (admin)",
+    request=BrandSerializer,
+    responses={201: BrandSerializer},
+    methods=["POST"],
+)
 @api_view(["GET", "POST"])
 @permission_classes([IsAdminOrReadOnly])
 def brand_list(request):
@@ -75,6 +128,27 @@ def brand_list(request):
     return Response(BrandSerializer(brand).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Catálogo — Marcas"],
+    summary="Ver marca (público)",
+    responses={200: BrandSerializer},
+    methods=["GET"],
+    auth=[{}],
+)
+@extend_schema(
+    tags=["Catálogo — Marcas"],
+    summary="Editar marca (admin)",
+    request=BrandSerializer,
+    responses={200: BrandSerializer},
+    methods=["PUT", "PATCH"],
+)
+@extend_schema(
+    tags=["Catálogo — Marcas"],
+    summary="Eliminar marca (admin)",
+    description="Falla con 409 si hay productos asociados a la marca.",
+    responses={204: None, 409: DetailSerializer},
+    methods=["DELETE"],
+)
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
 @permission_classes([IsAdminOrReadOnly])
 def brand_detail(request, brand_id):
@@ -108,6 +182,29 @@ def brand_detail(request, brand_id):
 # --- Productos ---
 
 
+@extend_schema(
+    tags=["Catálogo — Productos"],
+    summary="Listar productos (público)",
+    description="Solo devuelve productos activos. Admite filtros y paginación.",
+    parameters=[
+        OpenApiParameter("category", str, description="ID de categoría para filtrar."),
+        OpenApiParameter("brand", str, description="ID de marca para filtrar."),
+        OpenApiParameter("search", str, description="Búsqueda parcial por nombre."),
+        OpenApiParameter("min_price", str, description="Precio mínimo (MXN)."),
+        OpenApiParameter("max_price", str, description="Precio máximo (MXN)."),
+        *PAGINATION_PARAMETERS,
+    ],
+    responses={200: paginated_response(ProductSerializer, "PaginatedProductList")},
+    methods=["GET"],
+    auth=[{}],
+)
+@extend_schema(
+    tags=["Catálogo — Productos"],
+    summary="Crear producto (admin)",
+    request=ProductSerializer,
+    responses={201: ProductSerializer},
+    methods=["POST"],
+)
 @api_view(["GET", "POST"])
 @permission_classes([IsAdminOrReadOnly])
 def product_list(request):
@@ -157,6 +254,29 @@ def product_list(request):
     return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Catálogo — Productos"],
+    summary="Ver producto (público)",
+    description="Productos desactivados devuelven 404 salvo que quien pregunta sea admin.",
+    responses={200: ProductSerializer, 404: DetailSerializer},
+    methods=["GET"],
+    auth=[{}],
+)
+@extend_schema(
+    tags=["Catálogo — Productos"],
+    summary="Editar producto (admin)",
+    request=ProductSerializer,
+    responses={200: ProductSerializer},
+    methods=["PUT", "PATCH"],
+)
+@extend_schema(
+    tags=["Catálogo — Productos"],
+    summary="Desactivar producto (admin)",
+    description="Soft delete: pone is_active=False. No se borra de verdad, para no romper "
+    "reseñas/pedidos que ya lo referencian.",
+    responses={204: None},
+    methods=["DELETE"],
+)
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
 @permission_classes([IsAdminOrReadOnly])
 def product_detail(request, product_id):

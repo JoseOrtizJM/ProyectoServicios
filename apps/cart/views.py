@@ -1,15 +1,30 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.common.schema import DetailSerializer
 from apps.common.utils import valid_object_id
 
 from .documents import CartItem, get_or_create_cart
 from .serializers import AddCartItemSerializer, CartSerializer, UpdateCartItemSerializer
 
 
+@extend_schema(
+    tags=["Carrito"],
+    summary="Ver mi carrito",
+    description="Se crea automáticamente (vacío) si el usuario todavía no tiene uno.",
+    responses={200: CartSerializer},
+    methods=["GET"],
+)
+@extend_schema(
+    tags=["Carrito"],
+    summary="Vaciar mi carrito",
+    responses={204: None},
+    methods=["DELETE"],
+)
 @api_view(["GET", "DELETE"])
 @permission_classes([IsAuthenticated])
 def cart_detail(request):
@@ -23,6 +38,14 @@ def cart_detail(request):
     return Response(CartSerializer(cart).data)
 
 
+@extend_schema(
+    tags=["Carrito"],
+    summary="Agregar producto al carrito",
+    description="Si el producto ya está en el carrito, suma la cantidad a la existente. "
+    "Valida que no se exceda el stock disponible.",
+    request=AddCartItemSerializer,
+    responses={201: CartSerializer, 400: DetailSerializer},
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def cart_item_add(request):
@@ -50,6 +73,19 @@ def cart_item_add(request):
     return Response(CartSerializer(cart).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Carrito"],
+    summary="Fijar cantidad de un producto en el carrito",
+    request=UpdateCartItemSerializer,
+    responses={200: CartSerializer, 400: DetailSerializer},
+    methods=["PATCH"],
+)
+@extend_schema(
+    tags=["Carrito"],
+    summary="Quitar un producto del carrito",
+    responses={204: None},
+    methods=["DELETE"],
+)
 @api_view(["PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def cart_item_detail(request, product_id):

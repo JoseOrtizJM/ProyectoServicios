@@ -1,4 +1,5 @@
-from rest_framework import status
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -6,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.cart.documents import get_or_create_cart
 from apps.common.permissions import IsAdmin
+from apps.common.schema import PAGINATION_PARAMETERS, DetailSerializer, paginated_response
 from apps.common.utils import get_object_or_404, paginate_queryset, valid_object_id
 
 from .documents import (
@@ -28,9 +30,29 @@ from .serializers import (
     detect_card_brand,
 )
 
+OrderStatusUpdateSerializer = inline_serializer(
+    name="OrderStatusUpdate",
+    fields={"status": serializers.ChoiceField(choices=STATUS_CHOICES)},
+)
+
 # --- Tarjetas guardadas ---
 
 
+@extend_schema(
+    tags=["Pedidos — Tarjetas"],
+    summary="Listar mis tarjetas guardadas",
+    responses={200: SavedCardSerializer(many=True)},
+    methods=["GET"],
+)
+@extend_schema(
+    tags=["Pedidos — Tarjetas"],
+    summary="Guardar una tarjeta",
+    description="Simulado: card_number/cvv se validan por formato pero JAMÁS se persisten "
+    "— solo se guardan marca y últimos 4 dígitos.",
+    request=AddCardSerializer,
+    responses={201: SavedCardSerializer},
+    methods=["POST"],
+)
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def card_list(request):
@@ -44,6 +66,11 @@ def card_list(request):
     return Response(SavedCardSerializer(card).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Pedidos — Tarjetas"],
+    summary="Eliminar una tarjeta guardada",
+    responses={204: None},
+)
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def card_detail(request, card_id):
@@ -55,6 +82,15 @@ def card_detail(request, card_id):
 # --- Checkout ---
 
 
+@extend_schema(
+    tags=["Pedidos"],
+    summary="Pagar el carrito (checkout)",
+    description="Cobra el carrito completo del usuario. Con tarjeta (simulada) el pedido "
+    "queda 'paid' de inmediato; en efectivo queda 'pending_payment'. Descuenta stock y "
+    "vacía el carrito al confirmar.",
+    request=CheckoutSerializer,
+    responses={201: OrderSerializer, 400: DetailSerializer},
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def checkout(request):
@@ -136,6 +172,12 @@ def checkout(request):
 # --- Historial de compras ---
 
 
+@extend_schema(
+    tags=["Pedidos"],
+    summary="Ver mi historial de compras",
+    parameters=PAGINATION_PARAMETERS,
+    responses={200: paginated_response(OrderSerializer, "PaginatedOrderList")},
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def order_list(request):
@@ -145,6 +187,12 @@ def order_list(request):
     return Response(paginated)
 
 
+@extend_schema(
+    tags=["Pedidos"],
+    summary="Ver un pedido",
+    description="Solo el dueño del pedido o un admin pueden verlo.",
+    responses={200: OrderSerializer},
+)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def order_detail(request, order_id):
@@ -159,6 +207,16 @@ def order_detail(request, order_id):
 # --- Panel admin de pedidos ---
 
 
+@extend_schema(
+    tags=["Admin — Pedidos"],
+    summary="Listar todos los pedidos (admin)",
+    parameters=[
+        OpenApiParameter("status", str, description=f"Filtrar por estado: {', '.join(STATUS_CHOICES)}."),
+        OpenApiParameter("user", str, description="ID de usuario comprador para filtrar."),
+        *PAGINATION_PARAMETERS,
+    ],
+    responses={200: paginated_response(OrderSerializer, "PaginatedAdminOrderList")},
+)
 @api_view(["GET"])
 @permission_classes([IsAdmin])
 def admin_order_list(request):
@@ -185,13 +243,18 @@ def admin_order_list(request):
     return Response(paginated)
 
 
+@extend_schema(
+    tags=["Admin — Pedidos"],
+    summary="Cambiar estado / cancelar pedido (admin)",
+    description="Flujo: pending_payment → paid → shipped → delivered. Cancelar solo es "
+    "posible antes de 'shipped'. Cancelar devuelve el stock reservado. Ver "
+    "ALLOWED_STATUS_TRANSITIONS para la máquina de estados completa.",
+    request=OrderStatusUpdateSerializer,
+    responses={200: OrderSerializer, 400: DetailSerializer},
+)
 @api_view(["PATCH"])
 @permission_classes([IsAdmin])
 def admin_order_status_update(request, order_id):
-    """Avanza el pedido en su flujo (pendiente_pago -> pagado -> enviado ->
-    recibido) o lo cancela. La cancelación es simplemente pasar a status
-    'cancelled' — no es una acción aparte, así que un solo endpoint cubre
-    ambos requisitos ("cambio de estados" y "cancelación de pedidos")."""
     order = get_object_or_404(Order, order_id)
     new_status = request.data.get("status")
 

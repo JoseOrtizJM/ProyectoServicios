@@ -1,5 +1,6 @@
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from mongoengine.errors import NotUniqueError
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -7,12 +8,47 @@ from rest_framework.response import Response
 
 from apps.catalog.documents import Product
 from apps.common.permissions import IsAdmin
+from apps.common.schema import PAGINATION_PARAMETERS, paginated_response
 from apps.common.utils import get_object_or_404, paginate_queryset, valid_object_id
 
 from .documents import Review
 from .serializers import ReviewCreateSerializer, ReviewSerializer
 
+ProductReviewListResponse = inline_serializer(
+    name="ProductReviewListResponse",
+    fields={
+        "count": serializers.IntegerField(),
+        "page": serializers.IntegerField(),
+        "page_size": serializers.IntegerField(),
+        "total_pages": serializers.IntegerField(),
+        "results": ReviewSerializer(many=True),
+        "summary": inline_serializer(
+            name="ReviewSummary",
+            fields={
+                "average_rating": serializers.FloatField(allow_null=True),
+                "total_reviews": serializers.IntegerField(),
+            },
+        ),
+    },
+)
 
+
+@extend_schema(
+    tags=["Reseñas"],
+    summary="Ver reseñas de un producto (público)",
+    description="Incluye resumen {average_rating, total_reviews} calculado con agregación de Mongo.",
+    parameters=PAGINATION_PARAMETERS,
+    responses={200: ProductReviewListResponse},
+    methods=["GET"],
+)
+@extend_schema(
+    tags=["Reseñas"],
+    summary="Crear reseña (usuario autenticado)",
+    description="Una reseña por usuario y producto. No se puede reseñar un producto desactivado.",
+    request=ReviewCreateSerializer,
+    responses={201: ReviewSerializer},
+    methods=["POST"],
+)
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def product_review_list(request, product_id):
@@ -50,6 +86,26 @@ def product_review_list(request, product_id):
     return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Reseñas"],
+    summary="Ver una reseña (público)",
+    responses={200: ReviewSerializer},
+    methods=["GET"],
+)
+@extend_schema(
+    tags=["Reseñas"],
+    summary="Editar mi reseña",
+    description="Solo el autor puede editar el contenido — el admin modera borrando, no reescribiendo.",
+    request=ReviewSerializer,
+    responses={200: ReviewSerializer},
+    methods=["PATCH"],
+)
+@extend_schema(
+    tags=["Reseñas"],
+    summary="Eliminar reseña (autor o admin)",
+    responses={204: None},
+    methods=["DELETE"],
+)
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def review_detail(request, review_id):
@@ -81,10 +137,20 @@ def review_detail(request, review_id):
     return Response(ReviewSerializer(review).data)
 
 
+@extend_schema(
+    tags=["Admin — Reseñas"],
+    summary="Listar todas las reseñas (admin)",
+    description="Panel de moderación: todas las reseñas, filtrables por producto y/o calificación.",
+    parameters=[
+        OpenApiParameter("product", str, description="ID de producto para filtrar."),
+        OpenApiParameter("rating", int, description="Calificación exacta (1-5) para filtrar."),
+        *PAGINATION_PARAMETERS,
+    ],
+    responses={200: paginated_response(ReviewSerializer, "PaginatedReviewList")},
+)
 @api_view(["GET"])
 @permission_classes([IsAdmin])
 def admin_review_list(request):
-    """Panel admin: todas las reseñas, filtrables por producto y/o calificación."""
     qs = Review.objects.all()
 
     product_id = request.query_params.get("product")

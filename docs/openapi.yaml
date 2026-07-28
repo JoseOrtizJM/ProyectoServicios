@@ -1,0 +1,2551 @@
+openapi: 3.0.3
+info:
+  title: Tienda en Línea — API
+  version: 1.0.0
+  description: 'API REST de la tienda en línea de artículos tecnológicos. Autenticación
+    con JWT (Bearer). Moneda: MXN.'
+paths:
+  /api/auth/admin/users/:
+    get:
+      operationId: auth_admin_users_retrieve
+      summary: Listar usuarios (admin)
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: string
+        description: Filtrar por 'true' o 'false'.
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      - in: query
+        name: role
+        schema:
+          type: string
+        description: 'Filtrar por rol: ''user'' o ''admin''.'
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Búsqueda parcial por email.
+      tags:
+      - Admin — Usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+  /api/auth/admin/users/{user_id}/:
+    get:
+      operationId: auth_admin_users_retrieve_2
+      summary: Ver un usuario (admin)
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Admin — Usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+    patch:
+      operationId: auth_admin_users_partial_update
+      description: is_active=false bloquea, is_active=true desbloquea. Un admin no
+        puede bloquearse ni quitarse su propio rol a sí mismo.
+      summary: Editar / cambiar rol / bloquear-desbloquear usuario (admin)
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Admin — Usuarios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+    delete:
+      operationId: auth_admin_users_destroy
+      description: 'Atajo semántico: en vez de eliminar, pone is_active=False. Conserva
+        su historial de pedidos y reseñas.'
+      summary: Bloquear usuario (admin)
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Admin — Usuarios
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/auth/change-password/:
+    post:
+      operationId: auth_change_password_create
+      summary: Cambiar mi contraseña
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      summary: Iniciar sesión
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Invalida el refresh token enviado (blacklist). El access token
+        en uso sigue siendo válido hasta que expire naturalmente (máx. JWT_ACCESS_TOKEN_MINUTES).
+      summary: Cerrar sesión
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      summary: Ver mi perfil
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: auth_profile_partial_update
+      description: Solo first_name/last_name son editables aquí — email, role e is_active
+        no se pueden auto-modificar.
+      summary: Editar mi perfil
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: Cambia un refresh token válido (no invalidado) por un access token
+        nuevo.
+      summary: Renovar el access token
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Crea una cuenta con role='user' y devuelve el par de tokens (access/refresh).
+      summary: Registrar un nuevo usuario
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: ''
+  /api/cart/:
+    get:
+      operationId: cart_retrieve
+      description: Se crea automáticamente (vacío) si el usuario todavía no tiene
+        uno.
+      summary: Ver mi carrito
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+    delete:
+      operationId: cart_destroy
+      summary: Vaciar mi carrito
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/cart/items/:
+    post:
+      operationId: cart_items_create
+      description: Si el producto ya está en el carrito, suma la cantidad a la existente.
+        Valida que no se exceda el stock disponible.
+      summary: Agregar producto al carrito
+      tags:
+      - Carrito
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/cart/items/{product_id}/:
+    patch:
+      operationId: cart_items_partial_update
+      summary: Fijar cantidad de un producto en el carrito
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carrito
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCartItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCartItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateCartItemRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+    delete:
+      operationId: cart_items_destroy
+      summary: Quitar un producto del carrito
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carrito
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/catalog/brands/:
+    get:
+      operationId: catalog_brands_retrieve
+      summary: Listar marcas (público)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      tags:
+      - Catálogo — Marcas
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBrandList'
+          description: ''
+    post:
+      operationId: catalog_brands_create
+      summary: Crear marca (admin)
+      tags:
+      - Catálogo — Marcas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BrandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BrandRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+  /api/catalog/brands/{brand_id}/:
+    get:
+      operationId: catalog_brands_retrieve_2
+      summary: Ver marca (público)
+      parameters:
+      - in: path
+        name: brand_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Marcas
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+    put:
+      operationId: catalog_brands_update
+      summary: Editar marca (admin)
+      parameters:
+      - in: path
+        name: brand_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Marcas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BrandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BrandRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+    patch:
+      operationId: catalog_brands_partial_update
+      summary: Editar marca (admin)
+      parameters:
+      - in: path
+        name: brand_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Marcas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBrandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBrandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBrandRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+          description: ''
+    delete:
+      operationId: catalog_brands_destroy
+      description: Falla con 409 si hay productos asociados a la marca.
+      summary: Eliminar marca (admin)
+      parameters:
+      - in: path
+        name: brand_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Marcas
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/catalog/categories/:
+    get:
+      operationId: catalog_categories_retrieve
+      summary: Listar categorías (público)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      tags:
+      - Catálogo — Categorías
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: catalog_categories_create
+      summary: Crear categoría (admin)
+      tags:
+      - Catálogo — Categorías
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/catalog/categories/{category_id}/:
+    get:
+      operationId: catalog_categories_retrieve_2
+      summary: Ver categoría (público)
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Categorías
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: catalog_categories_update
+      summary: Editar categoría (admin)
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Categorías
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: catalog_categories_partial_update
+      summary: Editar categoría (admin)
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Categorías
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: catalog_categories_destroy
+      description: Falla con 409 si hay productos asociados a la categoría.
+      summary: Eliminar categoría (admin)
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Categorías
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/catalog/products/:
+    get:
+      operationId: catalog_products_retrieve
+      description: Solo devuelve productos activos. Admite filtros y paginación.
+      summary: Listar productos (público)
+      parameters:
+      - in: query
+        name: brand
+        schema:
+          type: string
+        description: ID de marca para filtrar.
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: ID de categoría para filtrar.
+      - in: query
+        name: max_price
+        schema:
+          type: string
+        description: Precio máximo (MXN).
+      - in: query
+        name: min_price
+        schema:
+          type: string
+        description: Precio mínimo (MXN).
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Búsqueda parcial por nombre.
+      tags:
+      - Catálogo — Productos
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: catalog_products_create
+      summary: Crear producto (admin)
+      tags:
+      - Catálogo — Productos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/catalog/products/{product_id}/:
+    get:
+      operationId: catalog_products_retrieve_2
+      description: Productos desactivados devuelven 404 salvo que quien pregunta sea
+        admin.
+      summary: Ver producto (público)
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Productos
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+    put:
+      operationId: catalog_products_update
+      summary: Editar producto (admin)
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Productos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: catalog_products_partial_update
+      summary: Editar producto (admin)
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Productos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: catalog_products_destroy
+      description: 'Soft delete: pone is_active=False. No se borra de verdad, para
+        no romper reseñas/pedidos que ya lo referencian.'
+      summary: Desactivar producto (admin)
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Catálogo — Productos
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/chatbot/chat/:
+    post:
+      operationId: chatbot_chat_create
+      description: Usa Claude con tool use sobre datos reales de Mongo (más vendido,
+        mejor valorado, más barato, búsqueda). Reenvía el 'history' de la respuesta
+        anterior para mantener contexto entre preguntas.
+      summary: Preguntarle al chatbot con IA
+      tags:
+      - Chatbot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChatRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChatRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+        '502':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/dashboard/summary/:
+    get:
+      operationId: dashboard_summary_retrieve
+      description: Ventas, pedidos por estado, top 5 productos más vendidos, catálogo,
+        usuarios y últimos 5 pedidos. Las agregaciones corren en el propio Mongo.
+      summary: Resumen de ventas (admin)
+      tags:
+      - Admin — Dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+          description: ''
+  /api/health/:
+    get:
+      operationId: health_retrieve
+      description: Confirma que Django arrancó y que hay conexión real a MongoDB.
+      summary: Health check
+      tags:
+      - Sistema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+          description: ''
+  /api/orders/:
+    get:
+      operationId: orders_retrieve
+      summary: Ver mi historial de compras
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      tags:
+      - Pedidos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+  /api/orders/{order_id}/:
+    get:
+      operationId: orders_retrieve_2
+      description: Solo el dueño del pedido o un admin pueden verlo.
+      summary: Ver un pedido
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Pedidos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/orders/admin/:
+    get:
+      operationId: orders_admin_retrieve
+      description: Todos los pedidos de todos los usuarios, filtrables por estado
+        y/o comprador.
+      summary: Listar todos los pedidos (admin)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: 'Filtrar por estado: pending_payment, paid, shipped, delivered,
+          cancelled.'
+      - in: query
+        name: user
+        schema:
+          type: string
+        description: ID de usuario comprador para filtrar.
+      tags:
+      - Admin — Pedidos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdminOrderList'
+          description: ''
+  /api/orders/admin/{order_id}/status/:
+    patch:
+      operationId: orders_admin_status_partial_update
+      description: 'Flujo: pending_payment → paid → shipped → delivered. Cancelar
+        solo es posible antes de ''shipped''. Cancelar devuelve el stock reservado.
+        Ver ALLOWED_STATUS_TRANSITIONS para la máquina de estados completa.'
+      summary: Cambiar estado / cancelar pedido (admin)
+      parameters:
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Admin — Pedidos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/orders/cards/:
+    get:
+      operationId: orders_cards_list
+      summary: Listar mis tarjetas guardadas
+      tags:
+      - Pedidos — Tarjetas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavedCard'
+          description: ''
+    post:
+      operationId: orders_cards_create
+      description: 'Simulado: card_number/cvv se validan por formato pero JAMÁS se
+        persisten — solo se guardan marca y últimos 4 dígitos.'
+      summary: Guardar una tarjeta
+      tags:
+      - Pedidos — Tarjetas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCardRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddCardRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddCardRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedCard'
+          description: ''
+  /api/orders/cards/{card_id}/:
+    delete:
+      operationId: orders_cards_destroy
+      summary: Eliminar una tarjeta guardada
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Pedidos — Tarjetas
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/orders/checkout/:
+    post:
+      operationId: orders_checkout_create
+      description: Cobra el carrito completo del usuario. Con tarjeta (simulada) el
+        pedido queda 'paid' de inmediato; en efectivo queda 'pending_payment'. Descuenta
+        stock y vacía el carrito al confirmar.
+      summary: Pagar el carrito (checkout)
+      tags:
+      - Pedidos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Detail'
+          description: ''
+  /api/reviews/{review_id}/:
+    get:
+      operationId: reviews_retrieve
+      summary: Ver una reseña (público)
+      parameters:
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Reseñas
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+    patch:
+      operationId: reviews_partial_update
+      description: Solo el autor puede editar el contenido — el admin modera borrando,
+        no reescribiendo.
+      summary: Editar mi reseña
+      parameters:
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Reseñas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+    delete:
+      operationId: reviews_destroy
+      summary: Eliminar reseña (autor o admin)
+      parameters:
+      - in: path
+        name: review_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Reseñas
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reviews/admin/:
+    get:
+      operationId: reviews_admin_retrieve
+      description: 'Panel de moderación: todas las reseñas, filtrables por producto
+        y/o calificación.'
+      summary: Listar todas las reseñas (admin)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      - in: query
+        name: product
+        schema:
+          type: string
+        description: ID de producto para filtrar.
+      - in: query
+        name: rating
+        schema:
+          type: integer
+        description: Calificación exacta (1-5) para filtrar.
+      tags:
+      - Admin — Reseñas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewList'
+          description: ''
+  /api/reviews/products/{product_id}/:
+    get:
+      operationId: reviews_products_retrieve
+      description: Incluye resumen {average_rating, total_reviews} calculado con agregación
+        de Mongo.
+      summary: Ver reseñas de un producto (público)
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Número de página (por defecto 1).
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Resultados por página (por defecto 12, máximo 50).
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Reseñas
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductReviewListResponse'
+          description: ''
+    post:
+      operationId: reviews_products_create
+      description: Una reseña por usuario y producto. No se puede reseñar un producto
+        desactivado.
+      summary: Crear reseña (usuario autenticado)
+      parameters:
+      - in: path
+        name: product_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Reseñas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+components:
+  schemas:
+    AccessToken:
+      type: object
+      properties:
+        access:
+          type: string
+      required:
+      - access
+    AddCardRequest:
+      type: object
+      description: |-
+        Simulado: card_number y cvv se validan por formato pero JAMÁS se
+        persisten — solo se guardan marca + últimos 4 dígitos.
+      properties:
+        card_number:
+          type: string
+          writeOnly: true
+          minLength: 1
+        cvv:
+          type: string
+          writeOnly: true
+        exp_month:
+          type: integer
+          maximum: 12
+          minimum: 1
+        exp_year:
+          type: integer
+          minimum: 2000
+        alias:
+          type: string
+          default: ''
+          maxLength: 50
+      required:
+      - card_number
+      - exp_month
+      - exp_year
+    AddCartItemRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+      required:
+      - product_id
+    AdminUser:
+      type: object
+      description: |-
+        A diferencia de UserProfileSerializer (el usuario editando su propio
+        nombre), este serializer lo usa el admin y sí puede tocar role/is_active.
+        El email queda de solo lectura: es el identificador de login, cambiarlo
+        tiene implicaciones aparte que no se piden en este sprint.
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/AdminUserRoleEnum'
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - updated_at
+    AdminUserRoleEnum:
+      enum:
+      - user
+      - admin
+      type: string
+      description: |-
+        * `user` - user
+        * `admin` - admin
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        tokens:
+          $ref: '#/components/schemas/TokenPair'
+      required:
+      - tokens
+      - user
+    Brand:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    BrandRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - name
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+          readOnly: true
+        total_items:
+          type: string
+          readOnly: true
+        total:
+          type: string
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - items
+      - total
+      - total_items
+      - updated_at
+    CartItem:
+      type: object
+      description: |-
+        Representa un CartItem embebido, con precio y subtotal calculados
+        al momento (siempre reflejan el precio actual del producto, no uno
+        congelado — eso se "congela" recién en el pedido, Sprint 5).
+      properties:
+        product:
+          type: string
+          readOnly: true
+        quantity:
+          type: integer
+        unit_price:
+          type: string
+          readOnly: true
+        subtotal:
+          type: string
+          readOnly: true
+      required:
+      - product
+      - quantity
+      - subtotal
+      - unit_price
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    CategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - name
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        new_password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password
+      - new_password_confirm
+      - old_password
+    ChatHistoryInRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleDa6Enum'
+        content:
+          type: string
+          minLength: 1
+      required:
+      - content
+      - role
+    ChatHistoryOut:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleDa6Enum'
+        content:
+          type: string
+      required:
+      - content
+      - role
+    ChatRequestRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          description: La pregunta del usuario para el chatbot.
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatHistoryInRequest'
+          description: Turnos previos de la conversación, tal como los devolvió la
+            respuesta anterior.
+      required:
+      - message
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatHistoryOut'
+      required:
+      - history
+      - reply
+    CheckoutRequest:
+      type: object
+      properties:
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        card_id:
+          type: string
+        card_number:
+          type: string
+          writeOnly: true
+        cvv:
+          type: string
+          writeOnly: true
+        exp_month:
+          type: integer
+          maximum: 12
+          minimum: 1
+        exp_year:
+          type: integer
+          minimum: 2000
+        save_card:
+          type: boolean
+          default: false
+        card_alias:
+          type: string
+          default: ''
+          maxLength: 50
+      required:
+      - payment_method
+    DashboardCatalog:
+      type: object
+      properties:
+        total_active_products:
+          type: integer
+        total_categories:
+          type: integer
+        total_brands:
+          type: integer
+      required:
+      - total_active_products
+      - total_brands
+      - total_categories
+    DashboardSales:
+      type: object
+      properties:
+        total_orders:
+          type: integer
+        total_revenue:
+          type: string
+        orders_by_status:
+          $ref: '#/components/schemas/OrdersByStatus'
+      required:
+      - orders_by_status
+      - total_orders
+      - total_revenue
+    DashboardSummary:
+      type: object
+      properties:
+        sales:
+          $ref: '#/components/schemas/DashboardSales'
+        top_selling_products:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopSellingProduct'
+        catalog:
+          $ref: '#/components/schemas/DashboardCatalog'
+        users:
+          $ref: '#/components/schemas/DashboardUsers'
+        recent_orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+      required:
+      - catalog
+      - recent_orders
+      - sales
+      - top_selling_products
+      - users
+    DashboardUsers:
+      type: object
+      properties:
+        total_users:
+          type: integer
+        total_admins:
+          type: integer
+        blocked_users:
+          type: integer
+      required:
+      - blocked_users
+      - total_admins
+      - total_users
+    Detail:
+      type: object
+      description: |-
+        Respuesta genérica {"detail": "..."} usada por varios endpoints
+        (logout, cambio de contraseña, errores, etc.).
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+        mongo_connected:
+          type: boolean
+        mongo_error:
+          type: string
+          nullable: true
+        users_count:
+          type: integer
+          nullable: true
+      required:
+      - mongo_connected
+      - mongo_error
+      - status
+      - users_count
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        payment_method:
+          type: string
+          readOnly: true
+        card:
+          type: string
+          readOnly: true
+        status:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - card
+      - created_at
+      - id
+      - items
+      - payment_method
+      - status
+      - total
+      - updated_at
+      - user
+    OrderItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+          readOnly: true
+        product_name:
+          type: string
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        quantity:
+          type: integer
+        subtotal:
+          type: string
+          readOnly: true
+      required:
+      - product_id
+      - product_name
+      - quantity
+      - subtotal
+      - unit_price
+    OrdersByStatus:
+      type: object
+      properties:
+        pending_payment:
+          type: integer
+        paid:
+          type: integer
+        shipped:
+          type: integer
+        delivered:
+          type: integer
+        cancelled:
+          type: integer
+      required:
+      - cancelled
+      - delivered
+      - paid
+      - pending_payment
+      - shipped
+    PaginatedAdminOrderList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PaginatedBrandList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Brand'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PaginatedCategoryList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PaginatedOrderList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PaginatedProductList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PaginatedReviewList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PaginatedUserList:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUser'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - total_pages
+    PatchedAdminUserRequest:
+      type: object
+      description: |-
+        A diferencia de UserProfileSerializer (el usuario editando su propio
+        nombre), este serializer lo usa el admin y sí puede tocar role/is_active.
+        El email queda de solo lectura: es el identificador de login, cambiarlo
+        tiene implicaciones aparte que no se piden en este sprint.
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/AdminUserRoleEnum'
+        is_active:
+          type: boolean
+    PatchedBrandRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+    PatchedCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 500
+    PatchedOrderStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    PatchedProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+          maxLength: 2000
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+        image_url:
+          oneOf:
+          - type: string
+            format: uri
+            default: ''
+          - type: string
+            maxLength: 0
+        category_id:
+          type: string
+          writeOnly: true
+          minLength: 1
+        brand_id:
+          type: string
+          writeOnly: true
+          minLength: 1
+        is_active:
+          type: boolean
+    PatchedReviewRequest:
+      type: object
+      description: Lectura de una reseña, y edición del propio rating/comentario.
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          default: ''
+          maxLength: 1000
+    PatchedUpdateCartItemRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+    PatchedUserProfileRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+    PaymentMethodEnum:
+      enum:
+      - cash
+      - card
+      type: string
+      description: |-
+        * `cash` - cash
+        * `card` - card
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+          maxLength: 2000
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+        image_url:
+          oneOf:
+          - type: string
+            format: uri
+            default: ''
+          - type: string
+            maxLength: 0
+        category:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - brand
+      - category
+      - created_at
+      - id
+      - name
+      - price
+      - updated_at
+    ProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+          maxLength: 2000
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+        image_url:
+          oneOf:
+          - type: string
+            format: uri
+            default: ''
+          - type: string
+            maxLength: 0
+        category_id:
+          type: string
+          writeOnly: true
+          minLength: 1
+        brand_id:
+          type: string
+          writeOnly: true
+          minLength: 1
+        is_active:
+          type: boolean
+      required:
+      - brand_id
+      - category_id
+      - name
+      - price
+    ProductReviewListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        summary:
+          $ref: '#/components/schemas/ReviewSummary'
+      required:
+      - count
+      - page
+      - page_size
+      - results
+      - summary
+      - total_pages
+    RefreshTokenRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          default: ''
+          maxLength: 100
+        last_name:
+          type: string
+          default: ''
+          maxLength: 100
+      required:
+      - email
+      - password
+      - password_confirm
+    Review:
+      type: object
+      description: Lectura de una reseña, y edición del propio rating/comentario.
+      properties:
+        id:
+          type: string
+          readOnly: true
+        product:
+          type: string
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          default: ''
+          maxLength: 1000
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - product
+      - rating
+      - updated_at
+      - user
+    ReviewCreateRequest:
+      type: object
+      description: 'Requiere context={''request'': request, ''product'': product}.'
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        comment:
+          type: string
+          default: ''
+          maxLength: 1000
+      required:
+      - rating
+    ReviewSummary:
+      type: object
+      properties:
+        average_rating:
+          type: number
+          format: double
+          nullable: true
+        total_reviews:
+          type: integer
+      required:
+      - average_rating
+      - total_reviews
+    RoleDa6Enum:
+      enum:
+      - user
+      - assistant
+      type: string
+      description: |-
+        * `user` - user
+        * `assistant` - assistant
+    SavedCard:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        brand:
+          type: string
+          readOnly: true
+        last4:
+          type: string
+          readOnly: true
+        exp_month:
+          type: integer
+          readOnly: true
+        exp_year:
+          type: integer
+          readOnly: true
+        alias:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alias
+      - brand
+      - created_at
+      - exp_month
+      - exp_year
+      - id
+      - last4
+    StatusEnum:
+      enum:
+      - pending_payment
+      - paid
+      - shipped
+      - delivered
+      - cancelled
+      type: string
+      description: |-
+        * `pending_payment` - pending_payment
+        * `paid` - paid
+        * `shipped` - shipped
+        * `delivered` - delivered
+        * `cancelled` - cancelled
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TopSellingProduct:
+      type: object
+      properties:
+        product_id:
+          type: string
+          nullable: true
+        product_name:
+          type: string
+        total_quantity:
+          type: integer
+        total_revenue:
+          type: string
+      required:
+      - product_id
+      - product_name
+      - total_quantity
+      - total_revenue
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - is_active
+      - role
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

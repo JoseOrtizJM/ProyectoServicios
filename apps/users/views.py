@@ -1,4 +1,5 @@
 import jwt
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from mongoengine.errors import NotUniqueError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -12,6 +13,13 @@ from apps.common.jwt_utils import (
     generate_token_pair,
 )
 from apps.common.permissions import IsAdmin
+from apps.common.schema import (
+    PAGINATION_PARAMETERS,
+    AccessTokenSerializer,
+    DetailSerializer,
+    TokenPairSerializer,
+    paginated_response,
+)
 from apps.common.utils import get_object_or_404, paginate_queryset
 
 from .documents import ROLE_ADMIN, ROLE_CHOICES, BlacklistedToken, User
@@ -24,7 +32,19 @@ from .serializers import (
     UserProfileSerializer,
 )
 
+AuthResponseSerializer = inline_serializer(
+    name="AuthResponse",
+    fields={"user": UserProfileSerializer(), "tokens": TokenPairSerializer()},
+)
 
+
+@extend_schema(
+    tags=["Auth"],
+    summary="Registrar un nuevo usuario",
+    description="Crea una cuenta con role='user' y devuelve el par de tokens (access/refresh).",
+    request=RegisterSerializer,
+    responses={201: AuthResponseSerializer},
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def register(request):
@@ -47,6 +67,12 @@ def register(request):
     )
 
 
+@extend_schema(
+    tags=["Auth"],
+    summary="Iniciar sesión",
+    request=LoginSerializer,
+    responses={200: AuthResponseSerializer},
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login(request):
@@ -57,6 +83,13 @@ def login(request):
     return Response({"user": UserProfileSerializer(user).data, "tokens": tokens})
 
 
+@extend_schema(
+    tags=["Auth"],
+    summary="Renovar el access token",
+    description="Cambia un refresh token válido (no invalidado) por un access token nuevo.",
+    request=RefreshTokenSerializer,
+    responses={200: AccessTokenSerializer, 401: DetailSerializer},
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def refresh_token(request):
@@ -88,11 +121,17 @@ def refresh_token(request):
     return Response({"access": generate_access_token(user)})
 
 
+@extend_schema(
+    tags=["Auth"],
+    summary="Cerrar sesión",
+    description="Invalida el refresh token enviado (blacklist). El access token en uso sigue "
+    "siendo válido hasta que expire naturalmente (máx. JWT_ACCESS_TOKEN_MINUTES).",
+    request=RefreshTokenSerializer,
+    responses={200: DetailSerializer},
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout(request):
-    """Invalida el refresh token enviado. El access token en uso seguirá
-    siendo válido hasta que expire naturalmente (máx. JWT_ACCESS_TOKEN_MINUTES)."""
     serializer = RefreshTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     token = serializer.validated_data["refresh"]
@@ -103,6 +142,21 @@ def logout(request):
     return Response({"detail": "Sesión cerrada correctamente."})
 
 
+@extend_schema(
+    tags=["Auth"],
+    summary="Ver mi perfil",
+    responses={200: UserProfileSerializer},
+    methods=["GET"],
+)
+@extend_schema(
+    tags=["Auth"],
+    summary="Editar mi perfil",
+    description="Solo first_name/last_name son editables aquí — email, role e is_active "
+    "no se pueden auto-modificar.",
+    request=UserProfileSerializer,
+    responses={200: UserProfileSerializer},
+    methods=["PATCH"],
+)
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def profile(request):
@@ -115,6 +169,12 @@ def profile(request):
     return Response(UserProfileSerializer(user).data)
 
 
+@extend_schema(
+    tags=["Auth"],
+    summary="Cambiar mi contraseña",
+    request=ChangePasswordSerializer,
+    responses={200: DetailSerializer},
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def change_password(request):
@@ -127,6 +187,17 @@ def change_password(request):
 # --- Panel admin de usuarios ---
 
 
+@extend_schema(
+    tags=["Admin — Usuarios"],
+    summary="Listar usuarios (admin)",
+    parameters=[
+        OpenApiParameter("role", str, description="Filtrar por rol: 'user' o 'admin'."),
+        OpenApiParameter("is_active", str, description="Filtrar por 'true' o 'false'."),
+        OpenApiParameter("search", str, description="Búsqueda parcial por email."),
+        *PAGINATION_PARAMETERS,
+    ],
+    responses={200: paginated_response(AdminUserSerializer, "PaginatedUserList")},
+)
 @api_view(["GET"])
 @permission_classes([IsAdmin])
 def admin_user_list(request):
@@ -157,6 +228,29 @@ def admin_user_list(request):
     return Response(paginated)
 
 
+@extend_schema(
+    tags=["Admin — Usuarios"],
+    summary="Ver un usuario (admin)",
+    responses={200: AdminUserSerializer},
+    methods=["GET"],
+)
+@extend_schema(
+    tags=["Admin — Usuarios"],
+    summary="Editar / cambiar rol / bloquear-desbloquear usuario (admin)",
+    description="is_active=false bloquea, is_active=true desbloquea. Un admin no puede "
+    "bloquearse ni quitarse su propio rol a sí mismo.",
+    request=AdminUserSerializer,
+    responses={200: AdminUserSerializer, 400: DetailSerializer},
+    methods=["PATCH"],
+)
+@extend_schema(
+    tags=["Admin — Usuarios"],
+    summary="Bloquear usuario (admin)",
+    description="Atajo semántico: en vez de eliminar, pone is_active=False. Conserva su "
+    "historial de pedidos y reseñas.",
+    responses={200: AdminUserSerializer, 400: DetailSerializer},
+    methods=["DELETE"],
+)
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAdmin])
 def admin_user_detail(request, user_id):

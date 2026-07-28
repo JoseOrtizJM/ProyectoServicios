@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
+    "drf_spectacular",
     "apps.common",
     "apps.users",
     "apps.catalog",
@@ -170,4 +171,20 @@ REST_FRAMEWORK = {
     # token, request.user queda en None — nuestros permisos personalizados
     # y los de DRF (IsAuthenticated, etc.) manejan None correctamente.
     "UNAUTHENTICATED_USER": None,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# --- Documentación OpenAPI/Swagger (drf-spectacular) ---
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Tienda en Línea — API",
+    "DESCRIPTION": (
+        "API REST de la tienda en línea de artículos tecnológicos. "
+        "Autenticación con JWT (Bearer). Moneda: MXN."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # Nuestras vistas son funciones planas (@api_view), no ViewSets con
+    # queryset/serializer_class — sin esto, drf-spectacular intenta
+    # adivinar un "basename" a partir del modelo y falla en varias vistas.
+    "COMPONENT_SPLIT_REQUEST": True,
 }

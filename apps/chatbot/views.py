@@ -1,11 +1,46 @@
 import anthropic
 from django.conf import settings
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.common.schema import DetailSerializer
+
 from .tools import CHATBOT_TOOLS
+
+ChatRequestSerializer = inline_serializer(
+    name="ChatRequest",
+    fields={
+        "message": serializers.CharField(help_text="La pregunta del usuario para el chatbot."),
+        "history": inline_serializer(
+            name="ChatHistoryIn",
+            fields={
+                "role": serializers.ChoiceField(choices=["user", "assistant"]),
+                "content": serializers.CharField(),
+            },
+            many=True,
+            required=False,
+            help_text="Turnos previos de la conversación, tal como los devolvió la respuesta anterior.",
+        ),
+    },
+)
+
+ChatResponseSerializer = inline_serializer(
+    name="ChatResponse",
+    fields={
+        "reply": serializers.CharField(),
+        "history": inline_serializer(
+            name="ChatHistoryOut",
+            fields={
+                "role": serializers.ChoiceField(choices=["user", "assistant"]),
+                "content": serializers.CharField(),
+            },
+            many=True,
+        ),
+    },
+)
 
 SYSTEM_PROMPT = (
     "Eres el asistente de la tienda en línea. Respondes preguntas sobre el "
@@ -36,6 +71,15 @@ def _valid_history(history):
     return True
 
 
+@extend_schema(
+    tags=["Chatbot"],
+    summary="Preguntarle al chatbot con IA",
+    description="Usa Claude con tool use sobre datos reales de Mongo (más vendido, mejor "
+    "valorado, más barato, búsqueda). Reenvía el 'history' de la respuesta anterior para "
+    "mantener contexto entre preguntas.",
+    request=ChatRequestSerializer,
+    responses={200: ChatResponseSerializer, 503: DetailSerializer, 502: DetailSerializer},
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def chat(request):
