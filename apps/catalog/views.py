@@ -185,13 +185,15 @@ def brand_detail(request, brand_id):
 @extend_schema(
     tags=["Catálogo — Productos"],
     summary="Listar productos (público)",
-    description="Solo devuelve productos activos. Admite filtros y paginación.",
+    description="Invitados/usuarios solo ven productos activos. Un admin ve todos y puede "
+    "filtrar por 'is_active' (para encontrar y reactivar los desactivados).",
     parameters=[
         OpenApiParameter("category", str, description="ID de categoría para filtrar."),
         OpenApiParameter("brand", str, description="ID de marca para filtrar."),
         OpenApiParameter("search", str, description="Búsqueda parcial por nombre."),
         OpenApiParameter("min_price", str, description="Precio mínimo (MXN)."),
         OpenApiParameter("max_price", str, description="Precio máximo (MXN)."),
+        OpenApiParameter("is_active", str, description="Solo admin: 'true' o 'false'."),
         *PAGINATION_PARAMETERS,
     ],
     responses={200: paginated_response(ProductSerializer, "PaginatedProductList")},
@@ -210,7 +212,20 @@ def brand_detail(request, brand_id):
 def product_list(request):
     if request.method == "GET":
         params = request.query_params
-        qs = Product.objects(is_active=True)
+        is_admin = bool(request.user and getattr(request.user, "is_admin", False))
+
+        if is_admin:
+            # El panel de admin necesita ver también los productos
+            # desactivados (para poder reactivarlos), algo que un
+            # invitado/usuario normal nunca debe poder hacer.
+            qs = Product.objects.all()
+            is_active_param = params.get("is_active")
+            if is_active_param is not None:
+                if is_active_param.lower() not in ("true", "false"):
+                    return Response({"is_active": ["Debe ser 'true' o 'false'."]}, status=status.HTTP_400_BAD_REQUEST)
+                qs = qs.filter(is_active=(is_active_param.lower() == "true"))
+        else:
+            qs = Product.objects(is_active=True)
 
         category_id = params.get("category")
         if category_id:

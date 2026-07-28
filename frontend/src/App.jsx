@@ -5,6 +5,16 @@ import ProtectedRoute from "./components/routing/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminBrands from "./pages/admin/Brands";
+import AdminCategories from "./pages/admin/Categories";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminOrders from "./pages/admin/Orders";
+import AdminProducts from "./pages/admin/Products";
+import AdminReviews from "./pages/admin/Reviews";
+import AdminUsers from "./pages/admin/Users";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import Cart from "./pages/Cart";
 import Catalog from "./pages/Catalog";
 import Checkout from "./pages/Checkout";
@@ -13,8 +23,6 @@ import NotFound from "./pages/NotFound";
 import Orders from "./pages/Orders";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
 
 function App() {
   return (
@@ -34,6 +42,17 @@ function App() {
                   <Route path="/carrito" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/pedidos" element={<Orders />} />
+                </Route>
+                <Route element={<ProtectedRoute adminOnly />}>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="productos" element={<AdminProducts />} />
+                    <Route path="categorias" element={<AdminCategories />} />
+                    <Route path="marcas" element={<AdminBrands />} />
+                    <Route path="usuarios" element={<AdminUsers />} />
+                    <Route path="pedidos" element={<AdminOrders />} />
+                    <Route path="resenas" element={<AdminReviews />} />
+                  </Route>
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Route>

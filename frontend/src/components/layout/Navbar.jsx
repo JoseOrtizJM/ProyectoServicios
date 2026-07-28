@@ -6,7 +6,7 @@ import { useCart } from "../../context/CartContext";
 import ThemeToggle from "../ui/ThemeToggle";
 
 export default function Navbar() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { itemCount } = useCart();
 
   return (
@@ -55,6 +55,14 @@ export default function Navbar() {
               >
                 Mi perfil
               </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className="rounded-full bg-accent px-4 py-1.5 text-sm text-accent-foreground transition-colors hover:opacity-90"
+                >
+                  Admin
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={logout}
