@@ -18,6 +18,12 @@ export default function Navbar() {
         </Link>
 
         <nav className="flex items-center gap-3">
+          <Link
+            to="/catalogo"
+            className="rounded-full px-4 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-muted"
+          >
+            Catálogo
+          </Link>
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <span className="hidden text-sm text-muted sm:inline">
