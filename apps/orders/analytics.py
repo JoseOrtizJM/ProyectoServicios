@@ -3,6 +3,7 @@ los pedidos a Python). Las usa el dashboard admin (Sprint 6) y las
 reutilizará el chatbot con IA (Sprint 8) para preguntas como "¿cuál es el
 producto más vendido?"."""
 
+import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from .documents import STATUS_CANCELLED, STATUS_DELIVERED, STATUS_PAID, STATUS_SHIPPED, Order
@@ -61,3 +62,53 @@ def get_top_selling_products(limit=5):
         }
         for row in results
     ]
+
+
+# Config por periodo: cuántos buckets, de qué tamaño, y cómo se agrupan/
+# etiquetan. "day" = últimas 24h por hora, "week" = últimos 7 días por día,
+# "month" = últimos 30 días por día.
+_PERIOD_CONFIG = {
+    "day": {"bucket_delta": datetime.timedelta(hours=1), "num_buckets": 24, "date_format": "%Y-%m-%dT%H:00", "label_format": "%H:00"},
+    "week": {"bucket_delta": datetime.timedelta(days=1), "num_buckets": 7, "date_format": "%Y-%m-%d", "label_format": "%d/%m"},
+    "month": {"bucket_delta": datetime.timedelta(days=1), "num_buckets": 30, "date_format": "%Y-%m-%d", "label_format": "%d/%m"},
+}
+
+
+def get_sales_timeseries(period="week"):
+    """Ventas (pedidos + ingresos) agrupadas por periodo, con buckets sin
+    ventas incluidos en 0 — para que la gráfica no "salte" fechas."""
+    config = _PERIOD_CONFIG[period]
+    bucket_delta = config["bucket_delta"]
+    num_buckets = config["num_buckets"]
+    date_format = config["date_format"]
+
+    now = datetime.datetime.utcnow()
+    if period == "day":
+        start = now.replace(minute=0, second=0, microsecond=0) - bucket_delta * (num_buckets - 1)
+    else:
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0) - bucket_delta * (num_buckets - 1)
+
+    pipeline = [
+        {"$match": {"status": {"$in": REVENUE_STATUSES}, "created_at": {"$gte": start}}},
+        {
+            "$group": {
+                "_id": {"$dateToString": {"format": date_format, "date": "$created_at"}},
+                "orders": {"$sum": 1},
+                "revenue": {"$sum": "$total"},
+            }
+        },
+    ]
+    rows = {row["_id"]: row for row in Order.objects.aggregate(pipeline)}
+
+    points = []
+    for i in range(num_buckets):
+        bucket_start = start + bucket_delta * i
+        row = rows.get(bucket_start.strftime(date_format))
+        points.append(
+            {
+                "label": bucket_start.strftime(config["label_format"]),
+                "orders": row["orders"] if row else 0,
+                "revenue": str(_to_money(row["revenue"])) if row else "0.00",
+            }
+        )
+    return points

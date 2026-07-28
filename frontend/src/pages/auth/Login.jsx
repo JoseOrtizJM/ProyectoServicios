@@ -8,7 +8,7 @@ import Input from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -17,7 +17,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to={location.state?.from?.pathname || "/"} replace />;
+    return <Navigate to={location.state?.from?.pathname || (isAdmin ? "/admin" : "/")} replace />;
   }
 
   async function handleSubmit(event) {
@@ -25,8 +25,9 @@ export default function Login() {
     setErrors([]);
     setSubmitting(true);
     try {
-      await login(form.email, form.password);
-      navigate(location.state?.from?.pathname || "/", { replace: true });
+      const loggedInUser = await login(form.email, form.password);
+      const fallback = loggedInUser.role === "admin" ? "/admin" : "/";
+      navigate(location.state?.from?.pathname || fallback, { replace: true });
     } catch (error) {
       setErrors(extractErrorMessages(error));
     } finally {

@@ -1,6 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+
+import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
+  const { isAdmin } = useAuth();
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface px-6 py-16 text-center">
       <h1 className="text-3xl font-semibold text-foreground">Bienvenido a Tienda Tech</h1>

@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import AdminLayout from "./pages/admin/AdminLayout";
+import AdminAnalytics from "./pages/admin/Analytics";
 import AdminBrands from "./pages/admin/Brands";
 import AdminCategories from "./pages/admin/Categories";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -52,6 +53,7 @@ function App() {
                     <Route path="usuarios" element={<AdminUsers />} />
                     <Route path="pedidos" element={<AdminOrders />} />
                     <Route path="resenas" element={<AdminReviews />} />
+                    <Route path="analiticas" element={<AdminAnalytics />} />
                   </Route>
                 </Route>
                 <Route path="*" element={<NotFound />} />

@@ -5,6 +5,16 @@ export async function getDashboardSummary() {
   return data;
 }
 
+export async function getSalesChart(period = "week") {
+  const { data } = await apiClient.get("/dashboard/sales-chart/", { params: { period } });
+  return data;
+}
+
+export async function getTopProducts(limit = 10) {
+  const { data } = await apiClient.get("/dashboard/top-products/", { params: { limit } });
+  return data;
+}
+
 export async function listAdminUsers(params = {}) {
   const { data } = await apiClient.get("/auth/admin/users/", { params });
   return data;
