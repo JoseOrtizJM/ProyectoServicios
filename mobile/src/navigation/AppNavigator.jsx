@@ -1,8 +1,9 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { ClipboardList, Grid2x2, ShoppingCart, User } from "lucide-react-native";
+import { ClipboardList, Grid2x2, MessageCircle, ShoppingCart, User } from "lucide-react-native";
 
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
+import ChatScreen from "../screens/ChatScreen";
 import OrdersScreen from "../screens/OrdersScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import CartNavigator from "./CartNavigator";
@@ -50,6 +51,14 @@ export default function AppNavigator() {
         options={{
           title: "Mis pedidos",
           tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="ChatTab"
+        component={ChatScreen}
+        options={{
+          title: "Asistente",
+          tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
         }}
       />
       <Tab.Screen
