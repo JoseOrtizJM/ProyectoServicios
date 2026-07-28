@@ -1,13 +1,14 @@
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { ActivityIndicator, View } from "react-native";
 
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import HomeScreen from "../screens/HomeScreen";
-
-const Stack = createNativeStackNavigator();
+import AppNavigator from "./AppNavigator";
+import AuthNavigator from "./AuthNavigator";
 
 export default function RootNavigator() {
   const { theme, colors } = useTheme();
+  const { isAuthenticated, loading } = useAuth();
   const baseNavigationTheme = theme === "dark" ? DarkTheme : DefaultTheme;
 
   const navigationTheme = {
@@ -22,17 +23,17 @@ export default function RootNavigator() {
     },
   };
 
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.foreground,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      >
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: "Tienda Tech" }} />
-      </Stack.Navigator>
+      {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

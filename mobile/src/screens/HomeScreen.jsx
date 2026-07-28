@@ -1,22 +1,20 @@
-import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
 
+import Button from "../components/ui/Button";
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
-export default function HomeScreen() {
-  const { theme, colors, toggleTheme } = useTheme();
+export default function HomeScreen({ navigation }) {
+  const { user } = useAuth();
+  const { colors } = useTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.foreground }]}>Bienvenido a Tienda Tech</Text>
+      <Text style={[styles.title, { color: colors.foreground }]}>Hola, {user.first_name || user.email}</Text>
       <Text style={[styles.subtitle, { color: colors.muted }]}>
-        El catálogo, carrito y el resto de la app se irán agregando en los próximos sprints. Por
-        ahora, esto es el andamiaje base de la app móvil.
+        El catálogo, carrito y el resto de la app se irán agregando en los próximos sprints.
       </Text>
-      <Text onPress={toggleTheme} style={[styles.link, { color: colors.primary }]}>
-        Cambiar a tema {theme === "dark" ? "claro" : "oscuro"}
-      </Text>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+      <Button title="Mi perfil" onPress={() => navigation.navigate("Profile")} />
     </View>
   );
 }
@@ -38,10 +36,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
-  },
-  link: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
