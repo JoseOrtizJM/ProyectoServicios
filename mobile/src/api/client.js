@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { emitAuthExpired } from "./authEvents";
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from "./tokenStorage";
 
 // En Expo Go sobre un celular físico, "localhost" apunta al propio celular,
@@ -51,6 +52,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         refreshPromise = null;
         await clearTokens();
+        emitAuthExpired();
         return Promise.reject(refreshError);
       }
     }

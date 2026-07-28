@@ -109,7 +109,17 @@ export default function CheckoutScreen({ navigation }) {
           <Text style={{ color: colors.muted, fontSize: 12, textAlign: "center" }}>
             Se enviará a: {order.shipping_address}
           </Text>
-          <Button title="Seguir comprando" variant="outline" onPress={() => navigation.navigate("CatalogTab")} />
+          <Button
+            title="Seguir comprando"
+            variant="outline"
+            onPress={() => {
+              // Sin esto, la próxima vez que se abra la pestaña Carrito seguiría
+              // mostrando esta misma confirmación (React Navigation conserva el
+              // stack de cada pestaña en memoria al cambiar de pestaña).
+              navigation.popToTop();
+              navigation.navigate("CatalogTab");
+            }}
+          />
         </View>
       </View>
     );

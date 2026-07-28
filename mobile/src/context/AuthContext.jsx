@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
+import { onAuthExpired } from "../api/authEvents";
 import apiClient from "../api/client";
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from "../api/tokenStorage";
 
@@ -30,6 +31,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => onAuthExpired(() => setUser(null)), []);
 
   const login = useCallback(async (email, password) => {
     const { data } = await apiClient.post("/auth/login/", { email, password });

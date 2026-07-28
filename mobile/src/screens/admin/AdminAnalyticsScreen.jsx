@@ -5,7 +5,7 @@ import { getSalesChart, getTopProducts } from "../../api/admin";
 import BarList from "../../components/admin/charts/BarList";
 import ColumnChart from "../../components/admin/charts/ColumnChart";
 import { useTheme } from "../../context/ThemeContext";
-import { formatCurrency } from "../../utils/format";
+import { formatCompactCurrency, formatCurrency } from "../../utils/format";
 
 const PERIODS = [
   { value: "day", label: "Día" },
@@ -77,7 +77,7 @@ export default function AdminAnalyticsScreen() {
         {loadingSales ? (
           <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
         ) : (
-          <ColumnChart data={salesData} formatValue={(value) => formatCurrency(value).replace("MX$", "$")} />
+          <ColumnChart data={salesData} formatValue={formatCompactCurrency} />
         )}
       </View>
 
