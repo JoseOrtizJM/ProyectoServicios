@@ -10,6 +10,7 @@ import Catalog from "./pages/Catalog";
 import Checkout from "./pages/Checkout";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import Orders from "./pages/Orders";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
 import Login from "./pages/auth/Login";
@@ -32,6 +33,7 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/carrito" element={<Cart />} />
                   <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/pedidos" element={<Orders />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Route>

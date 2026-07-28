@@ -13,3 +13,8 @@ export async function checkout(payload) {
   const { data } = await apiClient.post("/orders/checkout/", payload);
   return data;
 }
+
+export async function listOrders(params = {}) {
+  const { data } = await apiClient.get("/orders/", { params });
+  return data;
+}

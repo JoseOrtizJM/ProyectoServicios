@@ -44,6 +44,12 @@ export default function Navbar() {
                 )}
               </Link>
               <Link
+                to="/pedidos"
+                className="hidden rounded-full px-4 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-muted sm:inline"
+              >
+                Mis pedidos
+              </Link>
+              <Link
                 to="/profile"
                 className="rounded-full px-4 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-muted"
               >
