@@ -1,8 +1,9 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Grid2x2, ShoppingCart, User } from "lucide-react-native";
+import { ClipboardList, Grid2x2, ShoppingCart, User } from "lucide-react-native";
 
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
+import OrdersScreen from "../screens/OrdersScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import CartNavigator from "./CartNavigator";
 import CatalogNavigator from "./CatalogNavigator";
@@ -41,6 +42,14 @@ export default function AppNavigator() {
           tabBarIcon: ({ color, size }) => <ShoppingCart color={color} size={size} />,
           tabBarBadge: itemCount > 0 ? itemCount : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.accent, color: colors.accentForeground },
+        }}
+      />
+      <Tab.Screen
+        name="OrdersTab"
+        component={OrdersScreen}
+        options={{
+          title: "Mis pedidos",
+          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
         }}
       />
       <Tab.Screen
