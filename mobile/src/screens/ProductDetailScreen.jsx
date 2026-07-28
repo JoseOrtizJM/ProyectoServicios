@@ -1,16 +1,21 @@
-import { ImageOff } from "lucide-react-native";
+import { ImageOff, Minus, Plus } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getProduct } from "../api/catalog";
+import { extractErrorMessages } from "../api/errors";
 import { listProductReviews } from "../api/reviews";
+import Alert from "../components/ui/Alert";
+import Button from "../components/ui/Button";
 import StarRating from "../components/ui/StarRating";
+import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
 import { formatCurrency, formatDate } from "../utils/format";
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { productId } = route.params;
   const { colors } = useTheme();
+  const { addItem } = useCart();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +24,11 @@ export default function ProductDetailScreen({ route, navigation }) {
   const [reviews, setReviews] = useState([]);
   const [summary, setSummary] = useState({ average_rating: null, total_reviews: 0 });
   const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [addSuccess, setAddSuccess] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -44,6 +54,26 @@ export default function ProductDetailScreen({ route, navigation }) {
       .catch(() => {})
       .finally(() => setReviewsLoading(false));
   }, [productId]);
+
+  useEffect(() => {
+    setQuantity(1);
+    setAddError("");
+    setAddSuccess(false);
+  }, [productId]);
+
+  async function handleAddToCart() {
+    setAddError("");
+    setAddSuccess(false);
+    setAddingToCart(true);
+    try {
+      await addItem(productId, quantity);
+      setAddSuccess(true);
+    } catch (error) {
+      setAddError(extractErrorMessages(error)[0]);
+    } finally {
+      setAddingToCart(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -96,6 +126,41 @@ export default function ProductDetailScreen({ route, navigation }) {
           {product.description || "Este producto no tiene descripción todavía."}
         </Text>
 
+        {product.stock > 0 && (
+          <View style={{ gap: 8, marginTop: 8 }}>
+            {addError ? <Alert>{addError}</Alert> : null}
+            {addSuccess ? <Alert variant="success">Se agregó al carrito.</Alert> : null}
+
+            <View style={styles.addRow}>
+              <View style={styles.quantityRow}>
+                <Pressable
+                  onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                  style={[styles.stepButton, { borderColor: colors.border }]}
+                >
+                  <Minus size={14} color={colors.foreground} />
+                </Pressable>
+                <Text style={{ color: colors.foreground, fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                  {quantity}
+                </Text>
+                <Pressable
+                  onPress={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                  style={[styles.stepButton, { borderColor: colors.border }]}
+                >
+                  <Plus size={14} color={colors.foreground} />
+                </Pressable>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Button
+                  title={addingToCart ? "Agregando…" : "Agregar al carrito"}
+                  onPress={handleAddToCart}
+                  loading={addingToCart}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Reseñas</Text>
 
         {reviewsLoading ? (
@@ -144,4 +209,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: "700", marginTop: 16, marginBottom: 4 },
   reviewCard: { borderWidth: 1, borderRadius: 14, padding: 12 },
   reviewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  addRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  quantityRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  stepButton: { width: 32, height: 32, borderRadius: 999, borderWidth: 1, alignItems: "center", justifyContent: "center" },
 });
