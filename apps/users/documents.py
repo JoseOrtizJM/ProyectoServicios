@@ -58,3 +58,21 @@ class User(me.Document):
 
     def __str__(self):
         return self.email
+
+
+class BlacklistedToken(me.Document):
+    """Refresh tokens invalidados por logout.
+
+    Los access tokens NO se blacklistean (viven poco, 30 min por defecto,
+    y revisar la blacklist en cada request encarecería todas las
+    peticiones autenticadas). Con invalidar el refresh token basta: sin
+    él no se pueden generar accesos nuevos una vez que el actual expire.
+    """
+
+    token = me.StringField(required=True, unique=True)
+    blacklisted_at = me.DateTimeField(default=datetime.datetime.utcnow)
+
+    meta = {
+        "collection": "blacklisted_tokens",
+        "indexes": ["token"],
+    }
