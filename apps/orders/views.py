@@ -5,10 +5,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.cart.documents import get_or_create_cart
-from apps.common.utils import get_object_or_404, paginate_queryset
+from apps.common.permissions import IsAdmin
+from apps.common.utils import get_object_or_404, paginate_queryset, valid_object_id
 
 from .documents import (
+    ALLOWED_STATUS_TRANSITIONS,
     PAYMENT_CARD,
+    STATUS_CANCELLED,
+    STATUS_CHOICES,
     STATUS_PAID,
     STATUS_PENDING_PAYMENT,
     CardSnapshot,
@@ -149,4 +153,69 @@ def order_detail(request, order_id):
     is_admin = bool(getattr(request.user, "is_admin", False))
     if not (is_owner or is_admin):
         raise PermissionDenied("No puedes ver pedidos de otro usuario.")
+    return Response(OrderSerializer(order).data)
+
+
+# --- Panel admin de pedidos ---
+
+
+@api_view(["GET"])
+@permission_classes([IsAdmin])
+def admin_order_list(request):
+    """Todos los pedidos de todos los usuarios, filtrables por estado y/o comprador."""
+    qs = Order.objects.all()
+
+    status_filter = request.query_params.get("status")
+    if status_filter:
+        if status_filter not in STATUS_CHOICES:
+            return Response(
+                {"status": [f"Estado inválido. Opciones: {', '.join(STATUS_CHOICES)}."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        qs = qs.filter(status=status_filter)
+
+    user_id = request.query_params.get("user")
+    if user_id:
+        if not valid_object_id(user_id):
+            return Response({"user": ["ID de usuario inválido."]}, status=status.HTTP_400_BAD_REQUEST)
+        qs = qs.filter(user=user_id)
+
+    paginated = paginate_queryset(qs.order_by("-created_at"), request)
+    paginated["results"] = OrderSerializer(paginated["results"], many=True).data
+    return Response(paginated)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAdmin])
+def admin_order_status_update(request, order_id):
+    """Avanza el pedido en su flujo (pendiente_pago -> pagado -> enviado ->
+    recibido) o lo cancela. La cancelación es simplemente pasar a status
+    'cancelled' — no es una acción aparte, así que un solo endpoint cubre
+    ambos requisitos ("cambio de estados" y "cancelación de pedidos")."""
+    order = get_object_or_404(Order, order_id)
+    new_status = request.data.get("status")
+
+    if new_status not in STATUS_CHOICES:
+        return Response(
+            {"status": [f"Estado inválido. Opciones: {', '.join(STATUS_CHOICES)}."]},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    allowed = ALLOWED_STATUS_TRANSITIONS.get(order.status, set())
+    if new_status not in allowed:
+        return Response(
+            {"status": [f"No se puede pasar de '{order.status}' a '{new_status}'."]},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if new_status == STATUS_CANCELLED:
+        # El pedido no se va a completar: se devuelve el stock reservado.
+        for item in order.items:
+            product = item.product
+            if product:
+                product.stock += item.quantity
+                product.save()
+
+    order.status = new_status
+    order.save()
     return Response(OrderSerializer(order).data)

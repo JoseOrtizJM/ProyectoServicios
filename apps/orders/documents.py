@@ -22,6 +22,18 @@ STATUS_CHOICES = (
     STATUS_CANCELLED,
 )
 
+# Flujo del pedido: pendiente_pago -> pagado -> enviado -> recibido.
+# Cancelar solo tiene sentido antes de que salga enviado (una vez enviado/
+# recibido, es una devolución, no una cancelación). delivered/cancelled
+# son estados terminales — de ahí no se puede pasar a ningún otro.
+ALLOWED_STATUS_TRANSITIONS = {
+    STATUS_PENDING_PAYMENT: {STATUS_PAID, STATUS_CANCELLED},
+    STATUS_PAID: {STATUS_SHIPPED, STATUS_CANCELLED},
+    STATUS_SHIPPED: {STATUS_DELIVERED},
+    STATUS_DELIVERED: set(),
+    STATUS_CANCELLED: set(),
+}
+
 
 class SavedCard(me.Document):
     """Tarjeta simulada. NUNCA se guarda el número completo ni el CVV —

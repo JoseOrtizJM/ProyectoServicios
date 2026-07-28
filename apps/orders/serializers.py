@@ -133,6 +133,7 @@ class OrderItemSerializer(serializers.Serializer):
 
 class OrderSerializer(serializers.Serializer):
     id = serializers.CharField(read_only=True)
+    user = serializers.SerializerMethodField(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     payment_method = serializers.CharField(read_only=True)
@@ -140,6 +141,12 @@ class OrderSerializer(serializers.Serializer):
     status = serializers.CharField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+
+    def get_user(self, obj):
+        if not obj.user:
+            return None
+        full_name = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return {"id": str(obj.user.id), "email": obj.user.email, "name": full_name or obj.user.email}
 
     def get_card(self, obj):
         if obj.card_snapshot:
