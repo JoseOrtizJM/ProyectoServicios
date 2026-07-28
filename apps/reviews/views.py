@@ -1,5 +1,6 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from mongoengine.errors import NotUniqueError
+from mongoengine.queryset.visitor import Q
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -10,6 +11,7 @@ from apps.catalog.documents import Product
 from apps.common.permissions import IsAdmin
 from apps.common.schema import PAGINATION_PARAMETERS, paginated_response
 from apps.common.utils import get_object_or_404, paginate_queryset, valid_object_id
+from apps.users.documents import User
 
 from .documents import Review
 from .serializers import ReviewCreateSerializer, ReviewSerializer
@@ -140,10 +142,11 @@ def review_detail(request, review_id):
 @extend_schema(
     tags=["Admin — Reseñas"],
     summary="Listar todas las reseñas (admin)",
-    description="Panel de moderación: todas las reseñas, filtrables por producto y/o calificación.",
+    description="Panel de moderación: todas las reseñas, filtrables por producto, calificación y/o autor.",
     parameters=[
         OpenApiParameter("product", str, description="ID de producto para filtrar."),
         OpenApiParameter("rating", int, description="Calificación exacta (1-5) para filtrar."),
+        OpenApiParameter("user_search", str, description="Búsqueda parcial por correo o nombre del autor."),
         *PAGINATION_PARAMETERS,
     ],
     responses={200: paginated_response(ReviewSerializer, "PaginatedReviewList")},
@@ -165,6 +168,14 @@ def admin_review_list(request):
             qs = qs.filter(rating=int(rating))
         except ValueError:
             return Response({"rating": ["Debe ser un número entero (1-5)."]}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_search = request.query_params.get("user_search")
+    if user_search:
+        term = user_search.strip()
+        matching_users = User.objects(
+            Q(email__icontains=term) | Q(first_name__icontains=term) | Q(last_name__icontains=term)
+        ).only("id")
+        qs = qs.filter(user__in=[u.id for u in matching_users])
 
     paginated = paginate_queryset(qs.order_by("-created_at"), request)
     paginated["results"] = ReviewSerializer(paginated["results"], many=True).data

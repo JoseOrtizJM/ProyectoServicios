@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import AdminNavigator from "./AdminNavigator";
 import AppNavigator from "./AppNavigator";
-import AuthNavigator from "./AuthNavigator";
+import GuestNavigator from "./GuestNavigator";
 
 export default function RootNavigator() {
   const { theme, colors } = useTheme();
@@ -34,7 +34,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer theme={navigationTheme}>
-      {!isAuthenticated ? <AuthNavigator /> : isAdmin ? <AdminNavigator /> : <AppNavigator />}
+      {!isAuthenticated ? <GuestNavigator /> : isAdmin ? <AdminNavigator /> : <AppNavigator />}
     </NavigationContainer>
   );
 }

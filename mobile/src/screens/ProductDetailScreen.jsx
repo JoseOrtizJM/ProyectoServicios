@@ -8,6 +8,7 @@ import { listProductReviews } from "../api/reviews";
 import Alert from "../components/ui/Alert";
 import Button from "../components/ui/Button";
 import StarRating from "../components/ui/StarRating";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
 import { formatCurrency, formatDate } from "../utils/format";
@@ -15,6 +16,7 @@ import { formatCurrency, formatDate } from "../utils/format";
 export default function ProductDetailScreen({ route, navigation }) {
   const { productId } = route.params;
   const { colors } = useTheme();
+  const { isAuthenticated } = useAuth();
   const { addItem } = useCart();
 
   const [product, setProduct] = useState(null);
@@ -126,39 +128,51 @@ export default function ProductDetailScreen({ route, navigation }) {
           {product.description || "Este producto no tiene descripción todavía."}
         </Text>
 
-        {product.stock > 0 && (
-          <View style={{ gap: 8, marginTop: 8 }}>
-            {addError ? <Alert>{addError}</Alert> : null}
-            {addSuccess ? <Alert variant="success">Se agregó al carrito.</Alert> : null}
+        {isAuthenticated ? (
+          product.stock > 0 && (
+            <View style={{ gap: 8, marginTop: 8 }}>
+              {addError ? <Alert>{addError}</Alert> : null}
+              {addSuccess ? <Alert variant="success">Se agregó al carrito.</Alert> : null}
 
-            <View style={styles.addRow}>
-              <View style={styles.quantityRow}>
-                <Pressable
-                  onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-                  style={[styles.stepButton, { borderColor: colors.border }]}
-                >
-                  <Minus size={14} color={colors.foreground} />
-                </Pressable>
-                <Text style={{ color: colors.foreground, fontSize: 14, minWidth: 20, textAlign: "center" }}>
-                  {quantity}
-                </Text>
-                <Pressable
-                  onPress={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                  style={[styles.stepButton, { borderColor: colors.border }]}
-                >
-                  <Plus size={14} color={colors.foreground} />
-                </Pressable>
-              </View>
+              <View style={styles.addRow}>
+                <View style={styles.quantityRow}>
+                  <Pressable
+                    onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+                    style={[styles.stepButton, { borderColor: colors.border }]}
+                  >
+                    <Minus size={14} color={colors.foreground} />
+                  </Pressable>
+                  <Text style={{ color: colors.foreground, fontSize: 14, minWidth: 20, textAlign: "center" }}>
+                    {quantity}
+                  </Text>
+                  <Pressable
+                    onPress={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                    style={[styles.stepButton, { borderColor: colors.border }]}
+                  >
+                    <Plus size={14} color={colors.foreground} />
+                  </Pressable>
+                </View>
 
-              <View style={{ flex: 1 }}>
-                <Button
-                  title={addingToCart ? "Agregando…" : "Agregar al carrito"}
-                  onPress={handleAddToCart}
-                  loading={addingToCart}
-                />
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title={addingToCart ? "Agregando…" : "Agregar al carrito"}
+                    onPress={handleAddToCart}
+                    loading={addingToCart}
+                  />
+                </View>
               </View>
             </View>
-          </View>
+          )
+        ) : (
+          <Text style={{ color: colors.muted, fontSize: 13, marginTop: 8 }}>
+            <Text
+              onPress={() => navigation.navigate("AccountTab")}
+              style={{ color: colors.primary, fontWeight: "600" }}
+            >
+              Inicia sesión
+            </Text>{" "}
+            para comprar este producto.
+          </Text>
         )}
 
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Reseñas</Text>
