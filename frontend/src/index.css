@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+/* Dark mode se activa agregando la clase .dark al <html>, no por media query,
+   para poder ofrecer un switch manual además del que sigue al sistema. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --background: #faf7fc;
+  --surface: #ffffff;
+  --surface-muted: #f2eefa;
+  --border: #e6e0f2;
+  --foreground: #3d3a4b;
+  --muted: #8b87a3;
+  --primary: #b8a9e8;
+  --primary-foreground: #352a5c;
+  --secondary: #a8d8dc;
+  --secondary-foreground: #1f4b4e;
+  --accent: #f3c6d3;
+  --accent-foreground: #6b2e42;
+  --success: #b3ddc0;
+  --success-foreground: #1e4a2c;
+  --danger: #f0b3b3;
+  --danger-foreground: #6b1f1f;
+  --warning: #f0dda0;
+  --warning-foreground: #5c4a12;
+}
+
+.dark {
+  --background: #1e1b26;
+  --surface: #262230;
+  --surface-muted: #2e2a3a;
+  --border: #3b3649;
+  --foreground: #ede9f5;
+  --muted: #a79fc0;
+  --primary: #b8a9e8;
+  --primary-foreground: #241c3d;
+  --secondary: #8fc8cc;
+  --secondary-foreground: #0f2e30;
+  --accent: #e3afc1;
+  --accent-foreground: #3d1826;
+  --success: #8fcba3;
+  --success-foreground: #12291a;
+  --danger: #e39a9a;
+  --danger-foreground: #341010;
+  --warning: #e3c888;
+  --warning-foreground: #302209;
+}
+
+body {
+  @apply bg-background text-foreground font-sans transition-colors duration-200;
+  margin: 0;
+  min-height: 100svh;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
