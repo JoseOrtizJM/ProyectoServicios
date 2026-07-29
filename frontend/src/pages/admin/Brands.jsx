@@ -9,6 +9,7 @@ export default function Brands() {
       createFn={createBrand}
       updateFn={updateBrand}
       deleteFn={deleteBrand}
+      productsFilterKey="brand"
     />
   );
 }

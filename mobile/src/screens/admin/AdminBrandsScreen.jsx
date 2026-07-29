@@ -9,6 +9,7 @@ export default function AdminBrandsScreen() {
       createFn={createBrand}
       updateFn={updateBrand}
       deleteFn={deleteBrand}
+      productsFilterType="brand"
     />
   );
 }

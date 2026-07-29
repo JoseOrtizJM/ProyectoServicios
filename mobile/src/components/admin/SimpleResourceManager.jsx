@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import { Pencil, Plus, Trash2 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert as RNAlert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
@@ -12,8 +13,9 @@ import Modal from "./Modal";
 
 const EMPTY_FORM = { name: "", description: "" };
 
-export default function SimpleResourceManager({ title, listFn, createFn, updateFn, deleteFn }) {
+export default function SimpleResourceManager({ title, listFn, createFn, updateFn, deleteFn, productsFilterType }) {
   const { colors } = useTheme();
+  const navigation = useNavigation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
@@ -105,15 +107,34 @@ export default function SimpleResourceManager({ title, listFn, createFn, updateF
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>{item.name}</Text>
+              <Pressable
+                style={{ flex: 1 }}
+                disabled={!productsFilterType}
+                onPress={() =>
+                  navigation.navigate("AdminProducts", {
+                    filterType: productsFilterType,
+                    filterId: item.id,
+                    filterName: item.name,
+                  })
+                }
+              >
+                <Text
+                  style={{
+                    color: colors.foreground,
+                    fontWeight: "600",
+                    fontSize: 14,
+                    textDecorationLine: productsFilterType ? "underline" : "none",
+                  }}
+                >
+                  {item.name}
+                </Text>
                 {item.description ? (
                   <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
                     {item.description}
                   </Text>
                 ) : null}
                 <Text style={{ color: colors.muted, fontSize: 11, marginTop: 2 }}>{formatDate(item.created_at)}</Text>
-              </View>
+              </Pressable>
               <View style={styles.rowActions}>
                 <Pressable onPress={() => openEdit(item)} hitSlop={8}>
                   <Pencil size={16} color={colors.muted} />

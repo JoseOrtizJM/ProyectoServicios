@@ -1,6 +1,6 @@
-import { Pencil, Plus } from "lucide-react-native";
+import { ImageOff, Pencil, Plus, X } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert as RNAlert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert as RNAlert, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
   createProduct,
@@ -34,13 +34,18 @@ const STATUS_FILTERS = [
   { value: "false", label: "Inactivos" },
 ];
 
-export default function AdminProductsScreen() {
+export default function AdminProductsScreen({ route }) {
   const { colors } = useTheme();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(
+    route?.params?.filterType === "category" ? route.params.filterId : "",
+  );
+  const [brandFilter, setBrandFilter] = useState(route?.params?.filterType === "brand" ? route.params.filterId : "");
+  const [filterLabel, setFilterLabel] = useState(route?.params?.filterName || null);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
 
@@ -64,13 +69,21 @@ export default function AdminProductsScreen() {
     setListError("");
     const params = { page_size: 50 };
     if (statusFilter) params.is_active = statusFilter;
+    if (categoryFilter) params.category = categoryFilter;
+    if (brandFilter) params.brand = brandFilter;
     listProducts(params)
       .then((data) => setProducts(data.results))
       .catch(() => setListError("No se pudo cargar la lista de productos."))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, [statusFilter]);
+  useEffect(load, [statusFilter, categoryFilter, brandFilter]);
+
+  function clearRelationFilter() {
+    setCategoryFilter("");
+    setBrandFilter("");
+    setFilterLabel(null);
+  }
 
   function openCreate() {
     setEditing(null);
@@ -166,6 +179,20 @@ export default function AdminProductsScreen() {
         </Pressable>
       </View>
 
+      {filterLabel ? (
+        <View style={styles.filterBannerRow}>
+          <Pressable
+            onPress={clearRelationFilter}
+            style={[styles.filterBanner, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}
+          >
+            <Text style={{ color: colors.foreground, fontSize: 12 }}>
+              {categoryFilter ? "Categoría" : "Marca"}: {filterLabel}
+            </Text>
+            <X size={12} color={colors.foreground} />
+          </Pressable>
+        </View>
+      ) : null}
+
       {listError ? <Alert>{listError}</Alert> : null}
 
       {loading ? (
@@ -177,6 +204,18 @@ export default function AdminProductsScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View
+                style={[
+                  styles.thumb,
+                  { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+                ]}
+              >
+                {item.image_url ? (
+                  <Image source={{ uri: item.image_url }} style={styles.thumbImage} resizeMode="cover" />
+                ) : (
+                  <ImageOff size={16} color={colors.muted} />
+                )}
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }} numberOfLines={1}>
                   {item.name}
@@ -332,8 +371,29 @@ const styles = StyleSheet.create({
   filterRow: { flexDirection: "row", gap: 6, flex: 1, flexWrap: "wrap" },
   filterChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   addButton: { width: 36, height: 36, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  filterBannerRow: { paddingHorizontal: 16, paddingBottom: 8 },
+  filterBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
   list: { paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
   row: { flexDirection: "row", alignItems: "flex-start", gap: 10, borderWidth: 1, borderRadius: 14, padding: 12 },
+  thumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  thumbImage: { width: "100%", height: "100%" },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
   badge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   rowActions: { alignItems: "flex-end", gap: 10 },

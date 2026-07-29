@@ -9,6 +9,7 @@ export default function AdminCategoriesScreen() {
       createFn={createCategory}
       updateFn={updateCategory}
       deleteFn={deleteCategory}
+      productsFilterType="category"
     />
   );
 }

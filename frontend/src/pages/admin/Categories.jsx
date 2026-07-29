@@ -9,6 +9,7 @@ export default function Categories() {
       createFn={createCategory}
       updateFn={updateCategory}
       deleteFn={deleteCategory}
+      productsFilterKey="category"
     />
   );
 }

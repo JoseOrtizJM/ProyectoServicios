@@ -117,6 +117,12 @@ STORAGES = {
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Imágenes de producto servidas por nuestro propio backend (en vez de
+# hotlinking directo a un CDN externo): evita depender de límites de tasa
+# o bloqueos por User-Agent de terceros, tanto en web como en la app móvil.
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # --- MongoDB / MongoEngine ---
 # En producción (Render + MongoDB Atlas) se usa MONGO_URI, una connection
 # string completa tipo "mongodb+srv://user:pass@cluster.mongodb.net/db".

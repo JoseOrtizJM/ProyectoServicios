@@ -1,5 +1,6 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { extractErrorMessages } from "../../api/errors";
 import { formatDate } from "../../utils/format";
@@ -10,7 +11,7 @@ import Modal from "./Modal";
 
 const EMPTY_FORM = { name: "", description: "" };
 
-export default function SimpleResourceManager({ title, listFn, createFn, updateFn, deleteFn }) {
+export default function SimpleResourceManager({ title, listFn, createFn, updateFn, deleteFn, productsFilterKey }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState("");
@@ -104,7 +105,19 @@ export default function SimpleResourceManager({ title, listFn, createFn, updateF
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {productsFilterKey ? (
+                      <Link
+                        to={`/admin/productos?${productsFilterKey}=${item.id}`}
+                        className="hover:underline"
+                        title="Ver productos de este elemento"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      item.name
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-muted">{item.description || "—"}</td>
                   <td className="px-4 py-3 text-muted">{formatDate(item.created_at)}</td>
                   <td className="px-4 py-3">
